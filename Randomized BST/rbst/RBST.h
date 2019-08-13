@@ -2,49 +2,94 @@
 
 #include <memory>
 #include <random>
+#include <utility>
+#include <assert.h>
 
-template <typename T>
+template <typename K, typename V>
 class RBST {
 public:
 	RBST() = default;
 
+	bool contains(const K& key) const;
+
+	V& find(const K& key) const;
+
+	void insert(const K& key, const V& value);
+	
+	bool remove(const K& key);
+
 private:
+	template <typename K, typename V>
 	struct Node final {
 		using Ptr = std::shared_ptr<Node>;
 
-		Node(T& key);
+		Node(const std::pair<K, V>& keyValue) {
+			m_keyValue = keyValue;
+		}
 
-		T m_key;
+		std::pair<K, V> m_keyValue;
 		size_t m_height{ 1 };
 		Ptr m_left;
 		Ptr m_right;
 	};
 
-	size_t safeGetHeight(const Node::Ptr& node) const;
-	void fixHeight(Node::Ptr& node);
+	size_t safeGetHeight(const typename Node<K, V>::Ptr& node) const;
+	void fixHeight(typename Node<K, V>::Ptr& node);
 
-	Node::Ptr find(Node::Ptr& node, const T& key) const;
+	typename Node<K, V>::Ptr find(typename Node<K, V>::Ptr& node, const K& key) const;
 
-	Node::Ptr insert(Node::Ptr& node, const T& key);
-	Node::Ptr insertRoot(Node::Ptr& node, const T& key);
+	typename Node<K, V>::Ptr insert(typename Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue);
+	typename Node<K, V>::Ptr insertRoot(typename Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue);
 
-	Node::Ptr rotateRight(Node::Ptr& node);
-	Node::Ptr rotateLeft(Node::Ptr& node);
+	typename Node<K, V>::Ptr rotateRight(typename Node<K, V>::Ptr& node);
+	typename Node<K, V>::Ptr rotateLeft(typename Node<K, V>::Ptr& node);
 
-	Node::Ptr join(Node::Ptr& p, Node::Ptr& q);
+	typename Node<K, V>::Ptr join(typename Node<K, V>::Ptr& p, typename Node<K, V>::Ptr& q);
 
-	Node::Ptr remove(Node::Ptr& p, const T& key);
+	typename Node<K, V>::Ptr remove(typename Node<K, V>::Ptr& p, const K& key);
 
-	Node::Ptr m_rootNode;
+	typename Node<K, V>::Ptr m_rootNode;
 	size_t m_size{ 0 };
 };
 
-template <typename T>
-RBST::Node(T& key) {
-	m_key = key;
-};
+template <typename K, typename V>
+bool RBST<K, V>::contains(const K& key) const {
+	return find(m_rootNode, key) != nullptr;
+}
 
-size_t safeGetHeight(const RBST::Node::Ptr& node) const {
+template <typename K, typename V>
+void RBST<K, V>::insert(const K& key, const V& value) {
+	m_rootNode = insert(m_rootNode, std::make_pair(key, value));
+	++m_size;
+}
+
+template <typename K, typename V>
+V& RBST<K, V>::find(const K& key) const {
+	auto ptr = find(m_rootNode, key);
+
+	assert(ptr != nullptr); // remove when iterators are implemented, or use optional
+
+	return ptr->m_keyValue.second;
+}
+
+template <typename K, typename V>
+bool RBST<K, V>::remove(const K& key) {
+	auto ptr = remove(m_rootNode, key);
+
+	if (ptr) {
+		--m_size;
+	}
+
+	return ptr != nullptr;
+}
+
+//template <typename K, typename V>
+//typename RBST<K, V>::template Node<K, V>(const std::pair<K, V>& keyValue) {
+//	m_keyValue = keyValue;
+//}
+
+template <typename K, typename V>
+size_t RBST<K, V>::safeGetHeight(const typename RBST<K, V>::Node<K, V>::Ptr& node) const {
 	if (node) {
 		return node->m_height;
 	}
@@ -52,44 +97,45 @@ size_t safeGetHeight(const RBST::Node::Ptr& node) const {
 	return 0;
 }
 
-void fixHeight(Node::RBST::Ptr& node) {
+template <typename K, typename V>
+void RBST<K, V>::fixHeight(typename RBST<K, V>::Node<K, V>::Ptr& node) {
 	if (node) {
 		node->m_height = safeGetHeight(node->m_left) + safeGetHeight(node->m_right) + 1;
 	}
 }
 
-template <typename T>
-RBST::Node::Ptr find(RBST::Node::Ptr& node, const T& key) const {
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::find(typename RBST<K, V>::Node<K, V>::Ptr& node, const K& key) const {
 	if (!node) {
 		return nullptr;
 	}
 
-	if (node->m_key == key) {
+	if (node->m_keyValue.first == key) {
 		return node;
 	}
 
-	if (node->m_key > key) {
+	if (node->m_keyValue.first > key) {
 		return find(node->m_left, key);
 	} else {
 		return find(node->m_right, key);
 	}
 }
 
-template <typename T>
-RBST::Node::Ptr insert(RBST::Node::Ptr& node, const T& key) {
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue) {
 	if (!node) {
-		return std::make_shared<RBST::Node>(key);
+		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
 
 	std::random_device rndDev;
 	if ((rndDev() % node->m_height + 1) == 0) {
-		return insertRoot(node, key);
+		return insertRoot(node, keyValue);
 	}
 
-	if (node->key > key) {
-		node->m_left = insert(node->m_left, key);
+	if (node->m_keyValue.first > keyValue.first) {
+		node->m_left = insert(node->m_left, keyValue);
 	} else {
-		node->m_right = insert(node->m_right, key);
+		node->m_right = insert(node->m_right, keyValue);
 	}
 	
 	fixHeight(node);
@@ -97,22 +143,23 @@ RBST::Node::Ptr insert(RBST::Node::Ptr& node, const T& key) {
 	return node;
 }
 
-template <typename T>
-RBST::Node::Ptr insertRoot(RBST::Node::Ptr& node, const T& key) {
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue) {
 	if (!node) {
-		return std::make_shared<RBST::Node>(key);
+		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
 
-	if (node->m_key > key) {
-		node->m_left = insertRoot(node->m_left, key);
+	if (node->m_keyValue.first > keyValue.first) {
+		node->m_left = insertRoot(node->m_left, keyValue);
 		return rotateRight(node);
 	} else {
-		node->m_right = insertRoot(node->m_right, key);
+		node->m_right = insertRoot(node->m_right, keyValue);
 		return rotateLeft(node);
 	}
 }
 
-RBST::Node::Ptr rotateRight(RBST::Node::Ptr& node) {
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node<K, V>::Ptr& node) {
 	auto q = node->m_left;
 
 	if (!q) {
@@ -128,7 +175,8 @@ RBST::Node::Ptr rotateRight(RBST::Node::Ptr& node) {
 	return q;
 }
 
-RBST::Node::Ptr rotateLeft(RBST::Node::Ptr& node) {
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node<K, V>::Ptr& node) {
 	auto p = node->m_right;
 
 	if (!p) {
@@ -143,7 +191,9 @@ RBST::Node::Ptr rotateLeft(RBST::Node::Ptr& node) {
 
 	return p;
 }
-RBST::Node::Ptr join(RBST::Node::Ptr& p, RBST::Node::Ptr& q) {
+
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::join(typename RBST<K, V>::Node<K, V>::Ptr& p, typename RBST<K, V>::Node<K, V>::Ptr& q) {
 	if (!p) {
 		return q;
 	}
@@ -164,19 +214,19 @@ RBST::Node::Ptr join(RBST::Node::Ptr& p, RBST::Node::Ptr& q) {
 	}
 }
 
-template <typename T>
-RBST::Node::Ptr remove(RBST::Node::Ptr& node, const T& key) {
+template <typename K, typename V>
+typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::remove(typename RBST<K, V>::Node<K, V>::Ptr& node, const K& key) {
 	if (!node) {
 		return node;
 	}
 
-	if (node->m_key == key) {
+	if (node->m_keyValue.first == key) {
 		auto q = join(node->m_left, node->m_right);
 		node.reset();
 		return q;
 	}
 
-	if (node->m_key > key) {
+	if (node->m_keyValue.first > key) {
 		node->m_left = remove(node->m_left, key);
 	} else {
 		node->m_right = remove(node->m_right, key);
