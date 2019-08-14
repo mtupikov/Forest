@@ -19,7 +19,6 @@ public:
 	bool remove(const K& key);
 
 private:
-	template <typename K, typename V>
 	struct Node final {
 		using Ptr = std::shared_ptr<Node>;
 
@@ -33,22 +32,22 @@ private:
 		Ptr m_right;
 	};
 
-	size_t safeGetHeight(const typename Node<K, V>::Ptr& node) const;
-	void fixHeight(typename Node<K, V>::Ptr& node);
+	size_t safeGetHeight(const typename Node::Ptr& node) const;
+	void fixHeight(typename Node::Ptr& node);
 
-	typename Node<K, V>::Ptr find(typename Node<K, V>::Ptr& node, const K& key) const;
+	typename Node::Ptr find(const typename Node::Ptr& node, const K& key) const;
 
-	typename Node<K, V>::Ptr insert(typename Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue);
-	typename Node<K, V>::Ptr insertRoot(typename Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue);
+	typename Node::Ptr insert(typename Node::Ptr& node, const std::pair<K, V>& keyValue);
+	typename Node::Ptr insertRoot(typename Node::Ptr& node, const std::pair<K, V>& keyValue);
 
-	typename Node<K, V>::Ptr rotateRight(typename Node<K, V>::Ptr& node);
-	typename Node<K, V>::Ptr rotateLeft(typename Node<K, V>::Ptr& node);
+	typename Node::Ptr rotateRight(typename Node::Ptr& node);
+	typename Node::Ptr rotateLeft(typename Node::Ptr& node);
 
-	typename Node<K, V>::Ptr join(typename Node<K, V>::Ptr& p, typename Node<K, V>::Ptr& q);
+	typename Node::Ptr join(typename Node::Ptr& p, typename Node::Ptr& q);
 
-	typename Node<K, V>::Ptr remove(typename Node<K, V>::Ptr& p, const K& key);
+	typename Node::Ptr remove(typename Node::Ptr& p, const K& key);
 
-	typename Node<K, V>::Ptr m_rootNode;
+	typename Node::Ptr m_rootNode;
 	size_t m_size{ 0 };
 };
 
@@ -83,13 +82,8 @@ bool RBST<K, V>::remove(const K& key) {
 	return ptr != nullptr;
 }
 
-//template <typename K, typename V>
-//typename RBST<K, V>::template Node<K, V>(const std::pair<K, V>& keyValue) {
-//	m_keyValue = keyValue;
-//}
-
 template <typename K, typename V>
-size_t RBST<K, V>::safeGetHeight(const typename RBST<K, V>::Node<K, V>::Ptr& node) const {
+size_t RBST<K, V>::safeGetHeight(const typename RBST<K, V>::Node::Ptr& node) const {
 	if (node) {
 		return node->m_height;
 	}
@@ -98,14 +92,14 @@ size_t RBST<K, V>::safeGetHeight(const typename RBST<K, V>::Node<K, V>::Ptr& nod
 }
 
 template <typename K, typename V>
-void RBST<K, V>::fixHeight(typename RBST<K, V>::Node<K, V>::Ptr& node) {
+void RBST<K, V>::fixHeight(typename RBST<K, V>::Node::Ptr& node) {
 	if (node) {
 		node->m_height = safeGetHeight(node->m_left) + safeGetHeight(node->m_right) + 1;
 	}
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::find(typename RBST<K, V>::Node<K, V>::Ptr& node, const K& key) const {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::find(const typename RBST<K, V>::Node::Ptr& node, const K& key) const {
 	if (!node) {
 		return nullptr;
 	}
@@ -122,7 +116,7 @@ typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::find(typename RBST<K, 
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr& node, const std::pair<K, V>& keyValue) {
 	if (!node) {
 		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
@@ -144,7 +138,7 @@ typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::insert(typename RBST<K
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node<K, V>::Ptr& node, const std::pair<K, V>& keyValue) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node::Ptr& node, const std::pair<K, V>& keyValue) {
 	if (!node) {
 		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
@@ -159,7 +153,7 @@ typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::insertRoot(typename RB
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node<K, V>::Ptr& node) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node::Ptr& node) {
 	auto q = node->m_left;
 
 	if (!q) {
@@ -176,7 +170,7 @@ typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::rotateRight(typename R
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node<K, V>::Ptr& node) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node::Ptr& node) {
 	auto p = node->m_right;
 
 	if (!p) {
@@ -193,7 +187,7 @@ typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::rotateLeft(typename RB
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::join(typename RBST<K, V>::Node<K, V>::Ptr& p, typename RBST<K, V>::Node<K, V>::Ptr& q) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::join(typename RBST<K, V>::Node::Ptr& p, typename RBST<K, V>::Node::Ptr& q) {
 	if (!p) {
 		return q;
 	}
@@ -215,7 +209,7 @@ typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::join(typename RBST<K, 
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::template Node<K, V>::Ptr RBST<K, V>::remove(typename RBST<K, V>::Node<K, V>::Ptr& node, const K& key) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::remove(typename RBST<K, V>::Node::Ptr& node, const K& key) {
 	if (!node) {
 		return node;
 	}
