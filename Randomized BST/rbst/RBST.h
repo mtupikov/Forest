@@ -18,6 +18,10 @@ public:
 	
 	bool remove(const K& key);
 
+	void clear();
+
+	size_t size() const;
+
 private:
 	struct Node final {
 		using Ptr = std::shared_ptr<Node>;
@@ -75,11 +79,24 @@ template <typename K, typename V>
 bool RBST<K, V>::remove(const K& key) {
 	auto ptr = remove(m_rootNode, key);
 
-	if (ptr) {
+	if (ptr != m_rootNode) {
+		m_rootNode = ptr;
 		--m_size;
+		return true;
 	}
 
-	return ptr != nullptr;
+	return false;
+}
+
+template <typename K, typename V>
+void RBST<K, V>::clear() {
+	m_rootNode.reset();
+	m_size = 0;
+}
+
+template <typename K, typename V>
+size_t RBST<K, V>::size() const {
+	return m_size;
 }
 
 template <typename K, typename V>
@@ -100,11 +117,7 @@ void RBST<K, V>::fixHeight(typename RBST<K, V>::Node::Ptr& node) {
 
 template <typename K, typename V>
 typename RBST<K, V>::Node::Ptr RBST<K, V>::find(const typename RBST<K, V>::Node::Ptr& node, const K& key) const {
-	if (!node) {
-		return nullptr;
-	}
-
-	if (node->m_keyValue.first == key) {
+	if (!node || node->m_keyValue.first == key) {
 		return node;
 	}
 
@@ -225,5 +238,6 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::remove(typename RBST<K, V>::Node::Ptr
 	} else {
 		node->m_right = remove(node->m_right, key);
 	}
+
 	return node;
 }

@@ -2,17 +2,71 @@
 
 #include <string>
 #include <iostream>
+#include <assert.h>
 
 int main() {
 	RBST<int, std::string> tree;
+
+	/* insertion */
 
 	for (auto i = 0; i < 100; ++i) {
 		tree.insert(i, std::to_string(i));
 	}
 
 	for (auto i = 0; i < 100; ++i) {
-		std::cout << tree.find(i) << std::endl;
+		assert(tree.find(i) == std::to_string(i));
 	}
+
+	std::cout << "Insertion OK" << std::endl;
+
+	/* removal */
+
+	for (auto i = 0; i < 100; ++i) {
+		if (i % 2 == 0) {
+			tree.remove(i);
+		}
+	}
+
+	for (auto i = 0; i < 100; ++i) {
+		if (i % 2 != 0) {
+			auto& item = tree.find(i);
+			assert(item == std::to_string(i));
+		}
+	}
+
+	std::cout << "Removal OK" << std::endl;
+
+	/* clear */
+
+	tree.clear();
+
+	assert(tree.size() == 0);
+
+	std::cout << "Clear OK" << std::endl;
+
+	/* remove unexisting */
+
+	for (auto i = 0; i < 100; ++i) {
+		tree.insert(i, std::to_string(i));
+	}
+
+	for (auto i = 0; i < 200; ++i) {
+		if (i % 2 != 0) {
+			auto b = tree.remove(i);
+			if (i >= 100) {
+				assert(!b);
+			}
+		}
+	}
+
+	for (auto i = 0; i < 100; ++i) {
+		if (i % 2 == 0) {
+			auto& item = tree.find(i);
+			assert(item == std::to_string(i));
+		}
+	}
+
+	std::cout << "Remove unexisting OK" << std::endl;
 
 	return 0;
 }
