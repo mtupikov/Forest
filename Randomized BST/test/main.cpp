@@ -13,6 +13,8 @@ int main() {
 		tree.insert(i, std::to_string(i));
 	}
 
+	tree.printTree();
+
 	for (auto i = 0; i < 100; ++i) {
 		assert(tree.find(i) == std::to_string(i));
 	}
