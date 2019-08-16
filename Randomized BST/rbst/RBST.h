@@ -24,7 +24,6 @@ public:
 
 	size_t size() const;
 
-	void printTreeHorizontally() const;
 	void printTree() const;
 
 private:
@@ -42,8 +41,7 @@ private:
 		Ptr m_right;
 	};
 
-	void printBinaryTreeHorizontally(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const;
-	void printBinaryTree(const typename Node::Ptr& node, int indent = 0) const;
+	void printBinaryTree(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const;
 
 	size_t safeGetHeight(const typename Node::Ptr& node) const;
 	void fixHeight(typename Node::Ptr& node);
@@ -88,13 +86,10 @@ template <typename K, typename V>
 bool RBST<K, V>::remove(const K& key) {
 	auto ptr = remove(m_rootNode, key);
 
-	if (ptr != m_rootNode) {
-		m_rootNode = ptr;
-		--m_size;
-		return true;
-	}
+	m_rootNode = ptr;
+	--m_size;
 
-	return false;
+	return true; // refactor when iterators are implemented
 }
 
 template <typename K, typename V>
@@ -109,48 +104,19 @@ size_t RBST<K, V>::size() const {
 }
 
 template <typename K, typename V>
-void RBST<K, V>::printTreeHorizontally() const {
-	printBinaryTreeHorizontally("", m_rootNode, false);
-}
-
-template <typename K, typename V>
 void RBST<K, V>::printTree() const {
-	printBinaryTree(m_rootNode);
+	printBinaryTree("", m_rootNode, false);
 }
 
 template <typename K, typename V>
-void RBST<K, V>::printBinaryTreeHorizontally(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const {
+void RBST<K, V>::printBinaryTree(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const {
 	if (node) {
 		std::cout	<< prefix.c_str()
 		            << (isLeft ? "├──" : "└──" )
 		            << " " << node->m_keyValue.first << std::endl;
 
-		printBinaryTreeHorizontally(prefix + (isLeft ? "│   " : "    "), node->m_left, true);
-		printBinaryTreeHorizontally(prefix + (isLeft ? "│   " : "    "), node->m_right, false);
-	}
-}
-
-template <typename K, typename V>
-void RBST<K, V>::printBinaryTree(const typename Node::Ptr& node, int indent) const {
-	if (node) {
-		if (node->m_right) {
-			printBinaryTree(node->m_right, indent + 4);
-		}
-
-		if (indent) {
-			std::cout << std::setw(indent) << ' ';
-		}
-
-		if (node->m_right) {
-			std::cout << " /\n" << std::setw(indent) << ' ';
-		}
-
-		std::cout << node->m_keyValue.first << std::endl;
-
-		if (node->m_left) {
-			std::cout << std::setw(indent) << ' ' << " \\\n";
-			printBinaryTree(node->m_left, indent + 4);
-		}
+		printBinaryTree(prefix + (isLeft ? "│   " : "    "), node->m_left, true);
+		printBinaryTree(prefix + (isLeft ? "│   " : "    "), node->m_right, false);
 	}
 }
 
@@ -190,7 +156,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr
 	}
 
 	std::random_device rndDev;
-	if ((rndDev() % (node->m_height + 1)) == 0) { // <--- bug here
+	if ((rndDev() % (node->m_height + 1)) == 0) {
 		return insertRoot(node, keyValue);
 	}
 
@@ -270,7 +236,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::join(typename RBST<K, V>::Node::Ptr& 
 		fixHeight(p);
 		return p;
 	} else {
-		p->m_left = join(p, q->m_left);
+		q->m_left = join(p, q->m_left);
 		fixHeight(q);
 		return q;
 	}

@@ -13,8 +13,6 @@ int main() {
 		tree.insert(i, std::to_string(i));
 	}
 
-	tree.printTree();
-
 	for (auto i = 0; i < 100; ++i) {
 		assert(tree.find(i) == std::to_string(i));
 	}
@@ -28,6 +26,8 @@ int main() {
 			tree.remove(i);
 		}
 	}
+
+	assert(tree.size() == 50);
 
 	for (auto i = 0; i < 100; ++i) {
 		if (i % 2 != 0) {
@@ -69,6 +69,19 @@ int main() {
 	}
 
 	std::cout << "Remove unexisting OK" << std::endl;
+
+	tree.clear();
+
+	for (auto i = 0; i < 100000; ++i) {
+		tree.insert(i, std::to_string(i));
+	}
+
+	for (auto i = 0; i < 100000; ++i) {
+		assert(tree.find(i) == std::to_string(i));
+	}
+
+	std::cout << "Large Insertion OK" << std::endl;
+
 
 	return 0;
 }
