@@ -5,7 +5,6 @@
 #include <utility>
 #include <assert.h>
 #include <iostream>
-#include <iomanip>
 
 template <typename K, typename V>
 class RBST {
@@ -29,6 +28,7 @@ public:
 private:
 	struct Node final {
 		using Ptr = std::shared_ptr<Node>;
+		using WPtr = std::weak_ptr<Node>;
 
 		Node(const std::pair<K, V>& keyValue) {
 			m_keyValue = keyValue;
@@ -36,7 +36,7 @@ private:
 
 		std::pair<K, V> m_keyValue;
 		size_t m_height{ 1 };
-		Ptr m_parent;
+		WPtr m_parent;
 		Ptr m_left;
 		Ptr m_right;
 	};
@@ -111,9 +111,18 @@ void RBST<K, V>::printTree() const {
 template <typename K, typename V>
 void RBST<K, V>::printBinaryTree(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const {
 	if (node) {
+		std::string parentStr;
+		const auto& strongParent = node->m_parent.lock();
+		if (strongParent) {
+			parentStr = " (parent : ";
+			parentStr += strongParent->m_keyValue.second;
+			parentStr += ")";
+		}
+
 		std::cout	<< prefix.c_str()
 		            << (isLeft ? "├──" : "└──" )
-		            << " " << node->m_keyValue.first << std::endl;
+		            << " " << node->m_keyValue.first
+		            <<  parentStr << std::endl;
 
 		printBinaryTree(prefix + (isLeft ? "│   " : "    "), node->m_left, true);
 		printBinaryTree(prefix + (isLeft ? "│   " : "    "), node->m_right, false);
@@ -165,7 +174,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr
 	} else {
 		node->m_right = insert(node->m_right, keyValue);
 	}
-	
+
 	fixHeight(node);
 
 	return node;
