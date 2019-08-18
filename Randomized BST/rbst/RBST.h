@@ -171,8 +171,10 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr
 
 	if (node->m_keyValue.first > keyValue.first) {
 		node->m_left = insert(node->m_left, keyValue);
+		node->m_left->m_parent = node;
 	} else {
 		node->m_right = insert(node->m_right, keyValue);
+		node->m_right->m_parent = node;
 	}
 
 	fixHeight(node);
@@ -188,9 +190,11 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node:
 
 	if (node->m_keyValue.first > keyValue.first) {
 		node->m_left = insertRoot(node->m_left, keyValue);
+		node->m_left->m_parent = node;
 		return rotateRight(node);
 	} else {
 		node->m_right = insertRoot(node->m_right, keyValue);
+		node->m_right->m_parent = node;
 		return rotateLeft(node);
 	}
 }
@@ -203,8 +207,13 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node
 		return node;
 	}
 
+	q->m_parent = node->m_parent; //
 	node->m_left = q->m_right;
+	if (node->m_left) {
+		node->m_left->m_parent = node; //
+	}
 	q->m_right = node;
+	node->m_parent = q; //
 	q->m_height = node->m_height;
 
 	fixHeight(node);
@@ -220,8 +229,13 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node:
 		return node;
 	}
 
+	p->m_parent = node->m_parent; //
 	node->m_right = p->m_left;
+	if (node->m_right) {
+		node->m_right->m_parent = node; //
+	}
 	p->m_left = node;
+	node->m_parent = p; //
 	p->m_height = node->m_height;
 
 	fixHeight(node);
@@ -242,10 +256,12 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::join(typename RBST<K, V>::Node::Ptr& 
 	std::random_device rndDev;
 	if ((rndDev() % (p->m_height + q->m_height)) < p->m_height) {
 		p->m_right = join(p->m_right, q);
+		p->m_right->m_parent = p;
 		fixHeight(p);
 		return p;
 	} else {
 		q->m_left = join(p, q->m_left);
+		q->m_left->m_parent = q;
 		fixHeight(q);
 		return q;
 	}
@@ -263,10 +279,10 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::remove(typename RBST<K, V>::Node::Ptr
 		return q;
 	}
 
-	if (node->m_keyValue.first > key) {
-		node->m_left = remove(node->m_left, key);
-	} else {
-		node->m_right = remove(node->m_right, key);
+	if (node->m_keyValue.first > key && (node->m_left = remove(node->m_left, key))) {
+		node->m_left->m_parent = node;
+	} else if ((node->m_right = remove(node->m_right, key))) {
+		node->m_right->m_parent = node;
 	}
 
 	return node;

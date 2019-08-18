@@ -17,8 +17,6 @@ int main() {
 		assert(tree.find(i) == std::to_string(i));
 	}
 
-	tree.printTree();
-
 	std::cout << "Insertion OK" << std::endl;
 
 	/* removal */
