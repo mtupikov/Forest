@@ -5,10 +5,19 @@
 #include <utility>
 #include <assert.h>
 #include <iostream>
+#include <iterator>
 
 template <typename K, typename V>
 class RBST {
+	struct Node;
+
 public:
+	class NodeIterator;
+
+	using iterator = NodeIterator;
+	using const_iterator = const NodeIterator;
+	using KVPair = std::pair<K, V>;
+
 	RBST() = default;
 
 	bool contains(const K& key) const;
@@ -25,16 +34,38 @@ public:
 
 	void printTree() const;
 
+	class NodeIterator final : public std::iterator<std::bidirectional_iterator_tag, KVPair> {
+	public:
+		using pointer = typename std::iterator<std::bidirectional_iterator_tag, KVPair>::pointer;
+
+		NodeIterator(pointer ptr);
+		NodeIterator(const NodeIterator& other);
+
+		NodeIterator& operator++();
+		NodeIterator operator++(int);
+
+		NodeIterator& operator--();
+		NodeIterator operator--(int);
+
+		bool operator==(const NodeIterator& other) const;
+		bool operator!=(const NodeIterator& other) const;
+
+		pointer operator*();
+
+	private:
+		typename Node::Ptr m_item;
+	};
+
 private:
 	struct Node final {
 		using Ptr = std::shared_ptr<Node>;
 		using WPtr = std::weak_ptr<Node>;
 
-		Node(const std::pair<K, V>& keyValue) {
+		Node(const KVPair& keyValue) {
 			m_keyValue = keyValue;
 		}
 
-		std::pair<K, V> m_keyValue;
+		KVPair m_keyValue;
 		size_t m_height{ 1 };
 		WPtr m_parent;
 		Ptr m_left;
@@ -48,8 +79,8 @@ private:
 
 	typename Node::Ptr find(const typename Node::Ptr& node, const K& key) const;
 
-	typename Node::Ptr insert(typename Node::Ptr& node, const std::pair<K, V>& keyValue);
-	typename Node::Ptr insertRoot(typename Node::Ptr& node, const std::pair<K, V>& keyValue);
+	typename Node::Ptr insert(typename Node::Ptr& node, const KVPair& keyValue);
+	typename Node::Ptr insertRoot(typename Node::Ptr& node, const KVPair& keyValue);
 
 	typename Node::Ptr rotateRight(typename Node::Ptr& node);
 	typename Node::Ptr rotateLeft(typename Node::Ptr& node);
@@ -159,7 +190,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::find(const typename RBST<K, V>::Node:
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr& node, const std::pair<K, V>& keyValue) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr& node, const KVPair& keyValue) {
 	if (!node) {
 		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
@@ -183,7 +214,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node::Ptr& node, const std::pair<K, V>& keyValue) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node::Ptr& node, const KVPair& keyValue) {
 	if (!node) {
 		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
