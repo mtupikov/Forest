@@ -34,9 +34,15 @@ public:
 
 	void printTree() const;
 
-	class NodeIterator final : public std::iterator<std::bidirectional_iterator_tag, KVPair> {
+	iterator begin() const;
+	const_iterator cbegin() const;
+
+	iterator end() const;
+	const_iterator cend() const;
+
+	class NodeIterator final : public std::iterator<std::bidirectional_iterator_tag, typename Node::Ptr> {
 	public:
-		using pointer = typename std::iterator<std::bidirectional_iterator_tag, KVPair>::pointer;
+		using pointer = typename std::iterator<std::bidirectional_iterator_tag, typename Node::Ptr>::pointer;
 
 		NodeIterator(pointer ptr);
 		NodeIterator(const NodeIterator& other);
@@ -53,7 +59,7 @@ public:
 		pointer operator*();
 
 	private:
-		typename Node::Ptr m_item;
+		pointer m_item;
 	};
 
 private:
@@ -61,9 +67,10 @@ private:
 		using Ptr = std::shared_ptr<Node>;
 		using WPtr = std::weak_ptr<Node>;
 
-		Node(const KVPair& keyValue) {
-			m_keyValue = keyValue;
-		}
+		Node(const KVPair& keyValue);
+
+		Ptr next() const;
+		Ptr prev() const;
 
 		KVPair m_keyValue;
 		size_t m_height{ 1 };
@@ -137,6 +144,106 @@ size_t RBST<K, V>::size() const {
 template <typename K, typename V>
 void RBST<K, V>::printTree() const {
 	printBinaryTree("", m_rootNode, false);
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::iterator RBST<K, V>::begin() const {
+	iterator it;
+
+
+
+	return it;
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::const_iterator RBST<K, V>::cbegin() const {
+	iterator it;
+
+
+
+	return it;
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::iterator RBST<K, V>::end() const {
+	iterator it;
+
+
+
+	return it;
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::const_iterator RBST<K, V>::cend() const {
+	iterator it;
+
+
+
+	return it;
+}
+
+template <typename K, typename V>
+RBST<K, V>::NodeIterator::NodeIterator(typename RBST<K, V>::NodeIterator::pointer ptr) {
+	m_item = ptr;
+}
+
+template <typename K, typename V>
+RBST<K, V>::NodeIterator::NodeIterator(const typename RBST<K, V>::NodeIterator& other) {
+	*this = other;
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::NodeIterator& RBST<K, V>::NodeIterator::operator++() {
+	return NodeIterator(m_item->next());
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::NodeIterator RBST<K, V>::NodeIterator::operator++(int) {
+	auto tmp = *this;
+	operator++();
+	return tmp;
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::NodeIterator& RBST<K, V>::NodeIterator::operator--() {
+	return NodeIterator(m_item->prev());
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::NodeIterator RBST<K, V>::NodeIterator::operator--(int) {
+	auto tmp = *this;
+	operator--();
+	return tmp;
+}
+
+template <typename K, typename V>
+bool RBST<K, V>::NodeIterator::operator==(const NodeIterator& other) const {
+	return m_item->m_keyValue == other.m_item->m_keyValue;
+}
+
+template <typename K, typename V>
+bool RBST<K, V>::NodeIterator::operator!=(const NodeIterator& other) const {
+	return !(*this == other);
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::NodeIterator::pointer RBST<K, V>::NodeIterator::operator*() {
+	return m_item->m_keyValue;
+}
+
+template <typename K, typename V>
+RBST<K, V>::Node::Node(const KVPair& keyValue) {
+	m_keyValue = keyValue;
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::next() const {
+
+}
+
+template <typename K, typename V>
+typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::prev() const {
+
 }
 
 template <typename K, typename V>
