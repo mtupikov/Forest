@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <iostream>
 #include <iterator>
+#include <string>
 
 template <typename K, typename V>
 class RBST {
@@ -128,7 +129,7 @@ typename RBST<K, V>::iterator RBST<K, V>::remove(const K& key) {
 	m_rootNode = ptr;
 	--m_size;
 
-	return true; // TODO refactor
+	return iterator(); // TODO refactor
 }
 
 template <typename K, typename V>
@@ -265,15 +266,16 @@ RBST<K, V>::Node::Node(const KVPair& keyValue) {
 template <typename K, typename V>
 typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::next() const {
 	Node::Ptr ptr;
+	auto strongParent = m_parent.lock();
 
-	if (!m_parent) {
+	if (!strongParent) {
 		return ptr;
 	}
 
-	if ((*this == m_parent->m_left) && (m_parent->m_right)) {
-		ptr = m_parent->m_right;
+	if ((this == strongParent->m_left.get()) && (strongParent->m_right)) {
+		ptr = strongParent->m_right;
 	} else {
-		return m_parent;
+		return strongParent;
 	}
 
 	while (true) {
@@ -292,22 +294,29 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::next() const {
 template <typename K, typename V>
 typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::prev() const {
 	Node::Ptr ptr;
+	auto strongParent = m_parent.lock();
 
-	if (!m_parent) {
+	if (!strongParent) {
 		return ptr;
 	}
 
-	if ((*this == m_parent->m_right) && (m_parent->m_left)) {
-		ptr = m_parent->m_left;
+	if ((this == strongParent->m_right.get()) && (strongParent->m_left)) {
+		return strongParent->m_left;
 	} else {
-		return m_parent;
+		ptr = strongParent;
 	}
 
 	while (true) {
-		if (ptr->m_right) {
-			ptr = ptr->m_right;
-		} else if (ptr->m_left) {
+		auto strongPtrParent = ptr->m_parent.lock();
+
+		if (strongPtrParent) {
+			ptr = strongPtrParent->m_left;
+		}
+
+		if (ptr->m_left) {
 			ptr = ptr->m_left;
+		} else if (ptr->m_right) {
+			ptr = ptr->m_right;
 		} else {
 			break;
 		}
@@ -323,13 +332,14 @@ void RBST<K, V>::printBinaryTree(const std::string& prefix, const typename Node:
 		const auto& strongParent = node->m_parent.lock();
 		if (strongParent) {
 			parentStr = " (parent : ";
-			parentStr += strongParent->m_keyValue.second;
+			parentStr += std::to_string(strongParent->m_keyValue.first);
 			parentStr += ")";
 		}
 
 		std::cout	<< prefix.c_str()
 		            << (isLeft ? "├──" : "└──" )
-		            << " " << node->m_keyValue.first
+		            << " (" << node->m_keyValue.first
+		            << ", " << node->m_keyValue.second << ") "
 		            <<  parentStr << std::endl;
 
 		printBinaryTree(prefix + (isLeft ? "│   " : "    "), node->m_left, true);
@@ -415,13 +425,13 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node
 		return node;
 	}
 
-	q->m_parent = node->m_parent; //
+	q->m_parent = node->m_parent;
 	node->m_left = q->m_right;
 	if (node->m_left) {
-		node->m_left->m_parent = node; //
+		node->m_left->m_parent = node;
 	}
 	q->m_right = node;
-	node->m_parent = q; //
+	node->m_parent = q;
 	q->m_height = node->m_height;
 
 	fixHeight(node);
@@ -437,13 +447,13 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node:
 		return node;
 	}
 
-	p->m_parent = node->m_parent; //
+	p->m_parent = node->m_parent;
 	node->m_right = p->m_left;
 	if (node->m_right) {
-		node->m_right->m_parent = node; //
+		node->m_right->m_parent = node;
 	}
 	p->m_left = node;
-	node->m_parent = p; //
+	node->m_parent = p;
 	p->m_height = node->m_height;
 
 	fixHeight(node);
