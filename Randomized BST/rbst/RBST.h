@@ -27,7 +27,7 @@ public:
 
 	void insert(const K& key, const V& value);
 	
-	iterator remove(const K& key);
+	bool remove(const K& key);
 
 	void clear();
 
@@ -50,9 +50,6 @@ public:
 		NodeIterator& operator++();
 		NodeIterator operator++(int);
 
-		NodeIterator& operator--();
-		NodeIterator operator--(int);
-
 		bool operator==(const NodeIterator& other) const;
 		bool operator!=(const NodeIterator& other) const;
 
@@ -61,6 +58,8 @@ public:
 
 		KVPair* operator->();
 		const KVPair* operator->() const;
+
+		operator bool() const;
 
 	private:
 		typename Node::Ptr m_item;
@@ -74,33 +73,34 @@ private:
 		Node(const KVPair& keyValue);
 
 		Ptr next() const;
-		Ptr prev() const;
 
 		KVPair m_keyValue;
-		size_t m_height{ 1 };
+		size_t m_size{ 1 };
 		WPtr m_parent;
 		Ptr m_left;
 		Ptr m_right;
 	};
 
+	using NodePtr = typename Node::Ptr;
+
 	void printBinaryTree(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const;
 
-	size_t safeGetHeight(const typename Node::Ptr& node) const;
-	void fixHeight(typename Node::Ptr& node);
+	size_t safeGetSize(const NodePtr& node) const;
+	void fixHeight(NodePtr& node);
 
-	typename Node::Ptr find(const typename Node::Ptr& node, const K& key) const;
+	NodePtr find(const NodePtr& node, const K& key) const;
 
-	typename Node::Ptr insert(typename Node::Ptr& node, const KVPair& keyValue);
-	typename Node::Ptr insertRoot(typename Node::Ptr& node, const KVPair& keyValue);
+	NodePtr insert(NodePtr& node, const KVPair& keyValue);
+	NodePtr insertRoot(NodePtr& node, const KVPair& keyValue);
 
-	typename Node::Ptr rotateRight(typename Node::Ptr& node);
-	typename Node::Ptr rotateLeft(typename Node::Ptr& node);
+	NodePtr rotateRight(NodePtr& node);
+	NodePtr rotateLeft(NodePtr& node);
 
-	typename Node::Ptr join(typename Node::Ptr& p, typename Node::Ptr& q);
+	NodePtr join(NodePtr& p, NodePtr& q);
 
-	typename Node::Ptr remove(typename Node::Ptr& p, const K& key);
+	NodePtr remove(NodePtr& p, const K& key);
 
-	typename Node::Ptr m_rootNode;
+	NodePtr m_rootNode;
 	size_t m_size{ 0 };
 };
 
@@ -123,13 +123,15 @@ typename RBST<K, V>::iterator RBST<K, V>::find(const K& key) const {
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::iterator RBST<K, V>::remove(const K& key) {
-	auto ptr = remove(m_rootNode, key);
+bool RBST<K, V>::remove(const K& key) {
+	if (!contains(key)) {
+		return false;
+	}
 
-	m_rootNode = ptr;
+	m_rootNode = remove(m_rootNode, key);
 	--m_size;
 
-	return iterator(); // TODO refactor
+	return true;
 }
 
 template <typename K, typename V>
@@ -185,7 +187,7 @@ const typename RBST<K, V>::iterator RBST<K, V>::cend() const {
 }
 
 template <typename K, typename V>
-RBST<K, V>::NodeIterator::NodeIterator(typename RBST<K, V>::Node::Ptr ptr) {
+RBST<K, V>::NodeIterator::NodeIterator(NodePtr ptr) {
 	m_item = ptr;
 }
 
@@ -204,19 +206,6 @@ template <typename K, typename V>
 typename RBST<K, V>::NodeIterator RBST<K, V>::NodeIterator::operator++(int) {
 	auto tmp = *this;
 	operator++();
-	return tmp;
-}
-
-template <typename K, typename V>
-typename RBST<K, V>::NodeIterator& RBST<K, V>::NodeIterator::operator--() {
-	m_item = m_item->prev();
-	return *this;
-}
-
-template <typename K, typename V>
-typename RBST<K, V>::NodeIterator RBST<K, V>::NodeIterator::operator--(int) {
-	auto tmp = *this;
-	operator--();
 	return tmp;
 }
 
@@ -259,6 +248,11 @@ const typename RBST<K, V>::KVPair* RBST<K, V>::NodeIterator::operator->() const 
 }
 
 template <typename K, typename V>
+RBST<K, V>::NodeIterator::operator bool() const {
+	return m_item != nullptr;
+}
+
+template <typename K, typename V>
 RBST<K, V>::Node::Node(const KVPair& keyValue) {
 	m_keyValue = keyValue;
 }
@@ -292,41 +286,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::next() const {
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::Node::prev() const {
-	Node::Ptr ptr;
-	auto strongParent = m_parent.lock();
-
-	if (!strongParent) {
-		return ptr;
-	}
-
-	if ((this == strongParent->m_right.get()) && (strongParent->m_left)) {
-		return strongParent->m_left;
-	} else {
-		ptr = strongParent;
-	}
-
-	while (true) {
-		auto strongPtrParent = ptr->m_parent.lock();
-
-		if (strongPtrParent) {
-			ptr = strongPtrParent->m_left;
-		}
-
-		if (ptr->m_left) {
-			ptr = ptr->m_left;
-		} else if (ptr->m_right) {
-			ptr = ptr->m_right;
-		} else {
-			break;
-		}
-	}
-
-	return ptr;
-}
-
-template <typename K, typename V>
-void RBST<K, V>::printBinaryTree(const std::string& prefix, const typename Node::Ptr& node, bool isLeft) const {
+void RBST<K, V>::printBinaryTree(const std::string& prefix, const NodePtr& node, bool isLeft) const {
 	if (node) {
 		std::string parentStr;
 		const auto& strongParent = node->m_parent.lock();
@@ -348,9 +308,9 @@ void RBST<K, V>::printBinaryTree(const std::string& prefix, const typename Node:
 }
 
 template <typename K, typename V>
-size_t RBST<K, V>::safeGetHeight(const typename RBST<K, V>::Node::Ptr& node) const {
+size_t RBST<K, V>::safeGetSize(const typename RBST<K, V>::Node::Ptr& node) const {
 	if (node) {
-		return node->m_height;
+		return node->m_size;
 	}
 
 	return 0;
@@ -359,12 +319,12 @@ size_t RBST<K, V>::safeGetHeight(const typename RBST<K, V>::Node::Ptr& node) con
 template <typename K, typename V>
 void RBST<K, V>::fixHeight(typename RBST<K, V>::Node::Ptr& node) {
 	if (node) {
-		node->m_height = safeGetHeight(node->m_left) + safeGetHeight(node->m_right) + 1;
+		node->m_size = safeGetSize(node->m_left) + safeGetSize(node->m_right) + 1;
 	}
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::find(const typename RBST<K, V>::Node::Ptr& node, const K& key) const {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::find(const NodePtr& node, const K& key) const {
 	if (!node || node->m_keyValue.first == key) {
 		return node;
 	}
@@ -377,13 +337,13 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::find(const typename RBST<K, V>::Node:
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr& node, const KVPair& keyValue) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(NodePtr& node, const KVPair& keyValue) {
 	if (!node) {
 		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
 
 	std::random_device rndDev;
-	if ((rndDev() % (node->m_height + 1)) == 0) {
+	if ((rndDev() % (node->m_size + 1)) == 0) {
 		return insertRoot(node, keyValue);
 	}
 
@@ -401,7 +361,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insert(typename RBST<K, V>::Node::Ptr
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node::Ptr& node, const KVPair& keyValue) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(NodePtr& node, const KVPair& keyValue) {
 	if (!node) {
 		return std::make_shared<RBST<K, V>::Node>(keyValue);
 	}
@@ -418,7 +378,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::insertRoot(typename RBST<K, V>::Node:
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node::Ptr& node) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(NodePtr& node) {
 	auto q = node->m_left;
 
 	if (!q) {
@@ -432,7 +392,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node
 	}
 	q->m_right = node;
 	node->m_parent = q;
-	q->m_height = node->m_height;
+	q->m_size = node->m_size;
 
 	fixHeight(node);
 
@@ -440,7 +400,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateRight(typename RBST<K, V>::Node
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node::Ptr& node) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(NodePtr& node) {
 	auto p = node->m_right;
 
 	if (!p) {
@@ -454,7 +414,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node:
 	}
 	p->m_left = node;
 	node->m_parent = p;
-	p->m_height = node->m_height;
+	p->m_size = node->m_size;
 
 	fixHeight(node);
 
@@ -462,7 +422,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::rotateLeft(typename RBST<K, V>::Node:
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::join(typename RBST<K, V>::Node::Ptr& p, typename RBST<K, V>::Node::Ptr& q) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::join(NodePtr& p, NodePtr& q) {
 	if (!p) {
 		return q;
 	}
@@ -472,7 +432,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::join(typename RBST<K, V>::Node::Ptr& 
 	}
 
 	std::random_device rndDev;
-	if ((rndDev() % (p->m_height + q->m_height)) < p->m_height) {
+	if ((rndDev() % (p->m_size + q->m_size)) < p->m_size) {
 		p->m_right = join(p->m_right, q);
 		p->m_right->m_parent = p;
 		fixHeight(p);
@@ -486,7 +446,7 @@ typename RBST<K, V>::Node::Ptr RBST<K, V>::join(typename RBST<K, V>::Node::Ptr& 
 }
 
 template <typename K, typename V>
-typename RBST<K, V>::Node::Ptr RBST<K, V>::remove(typename RBST<K, V>::Node::Ptr& node, const K& key) {
+typename RBST<K, V>::Node::Ptr RBST<K, V>::remove(NodePtr& node, const K& key) {
 	if (!node) {
 		return node;
 	}

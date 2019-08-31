@@ -54,7 +54,7 @@ int main() {
 		if (i % 2 != 0) {
 			auto b = tree.remove(i);
 			if (i >= 100) {
-				//assert(!b); enable when remove is full done
+				assert(!b);
 			}
 		}
 	}
@@ -89,28 +89,18 @@ int main() {
 	for (auto it = tree.begin(); it != tree.end(); ++it) {
 		it->second = std::to_string(it->first * 2);
 	}
-	std::cout << std::endl;
 
+	size_t i = 0;
 	for (auto it = tree.cbegin(); it != tree.cend(); ++it) {
 		assert(it->second == std::to_string(it->first * 2));
+		++i;
 	}
 
-//	auto it = tree.cbegin();
-//	while (it != tree.cend()) {
-//		auto prev = it++;
-//		--it;
-//		assert(prev == it);
-
-//		++it;
-
-//		auto next = it--;
-//		++it;
-//		assert(next == it);
-//	}
-
-	tree.printTree();
+	assert(i == tree.size());
 
 	std::cout << "Iterators test OK" << std::endl;
+
+	tree.printTree();
 
 	return 0;
 }
