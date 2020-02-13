@@ -1,4 +1,5 @@
 #include "Operand.h"
+#include "Operator.h"
 
 #include <assert.h>
 
@@ -53,8 +54,22 @@ void operandTest() {
 	}
 }
 
+void operatorTest() {
+	{
+		auto o = convertCharToOperandType('a');
+		assert(!o.has_value());
+	}
+
+	{
+		auto o = convertCharToOperandType('+');
+		assert(o.has_value());
+		assert(o.type() == Operator::Type::Addition);
+	}
+}
+
 int main() {
 	operandTest();
+	operatorTest();
 
 	return 0;
 }

@@ -4,19 +4,23 @@
 
 class Operator final {
 public:
-	enum class OperatorType {
+	enum class Type {
 		Addition,
 		Subtitution,
 		Division,
-		Multiplication
+		Multiplication,
+		Modulo,
+		Power
 	};
 
-	explicit Operator(OperatorType type);
+	explicit Operator(Type type);
 
-	OperatorType type() const;
+	Type type() const;
+
+	uint precedenceValue() const;
 
 private:
-	OperatorType m_type;
+	Type m_type;
 };
 
-std::optional<Operator::OperatorType> convertCharToOperandType(char c);
+std::optional<Operator::Type> convertCharToOperandType(char c);
