@@ -27,46 +27,28 @@ struct Operand final {
 	char variableName = invalidOperandVarName;
 };
 
-template <ExpressionType ExType>
 class ExpressionNode {
 public:
-	template <typename = std::enable_if_t<ExType == ExpressionType::Operator>>
-	explicit ExpressionNode(OperatorType type) {
-		m_operatorType = type;
-	}
+	explicit ExpressionNode(OperatorType type);
+	explicit ExpressionNode(double value);
+	explicit ExpressionNode(char variableName);
 
-	template <typename = std::enable_if_t<ExType == ExpressionType::Operand>>
-	explicit ExpressionNode(double value) {
-		m_operand.value = value;
-	}
-
-	template <typename = std::enable_if_t<ExType == ExpressionType::Operand>>
-	explicit ExpressionNode(char variableName) {
-		m_operand.variableName = variableName;
-	}
-
-	ExpressionType type() const {
-		return ExType;
-	}
-
-	template <typename = std::enable_if_t<ExType == ExpressionType::Operator>>
-	OperatorType operatorType() const {
-		return m_operatorType;
-	}
-
-	template <typename = std::enable_if_t<ExType == ExpressionType::Operand>>
-	Operand operandValue() const {
-		return m_operand;
-	}
+	ExpressionType type() const;
+	OperatorType operatorType() const;
+	Operand operandValue() const;
 
 private:
+	ExpressionNode(ExpressionType type);
+
 	union {
 		OperatorType m_operatorType;
 		Operand m_operand;
 	};
+
+	ExpressionType m_type;
 };
 
-std::optional<ExpressionNode<ExpressionType::Operand>> parseOperandNodeFromString(const std::string &str);
-std::optional<ExpressionNode<ExpressionType::Operator>> parseOperatorNodeFromChar(char op);
+std::optional<ExpressionNode> parseOperandNodeFromString(const std::string &str);
+std::optional<ExpressionNode> parseOperatorNodeFromChar(char op);
 
 bool isOperandUnknown(Operand op);

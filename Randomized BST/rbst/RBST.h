@@ -3,9 +3,9 @@
 #include <AbstractBST.h>
 
 template <typename K, typename V>
-class RBST : public AbstractBST<K, V, std::forward_iterator_tag> {
+class RBST : public AbstractBST<K, V> {
 public:
-	using AbstractBaseTree = AbstractBST<K, V, std::forward_iterator_tag>;
+	using AbstractBaseTree = AbstractBST<K, V>;
 	using AbstractBaseTree::find;
 
 	RBST() = default;

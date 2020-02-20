@@ -8,7 +8,7 @@
 #include <iterator>
 #include <string>
 
-template <typename K, typename V, typename IteratorTag>
+template <typename K, typename V, typename IteratorTag = std::forward_iterator_tag>
 class AbstractBST {
 protected:
 	struct AbstractNode;
