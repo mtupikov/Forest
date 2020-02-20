@@ -11,7 +11,7 @@ public:
 	RBST() = default;
 
 	void insert(const K& key, const V& value) override;
-	
+
 	bool remove(const K& key) override;
 
 	void printTree() const;

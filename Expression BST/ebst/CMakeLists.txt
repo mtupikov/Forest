@@ -1,8 +1,7 @@
 add_library(ebst STATIC
 	#EBST.h
-	Operand.h
-	Operator.h
-	Operator.cpp
+	ExpressionNode.h
+	ExpressionNode.cpp
 )
 
 target_link_libraries(ebst INTERFACE abst)
