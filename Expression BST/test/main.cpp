@@ -1,6 +1,8 @@
 #include "ExpressionNode.h"
+#include "EBST.h"
 
 #include <assert.h>
+#include <iostream>
 
 void operandTest() {
 	{
@@ -51,6 +53,8 @@ void operandTest() {
 		auto tRes = t.value();
 		assert(tRes.operandValue().value == -24434312.49328409234932);
 	}
+
+	std::cout << "Operands OK" << std::endl;
 }
 
 void operatorTest() {
@@ -66,11 +70,25 @@ void operatorTest() {
 		assert(oRes.type() == ExpressionType::Operator);
 		assert(oRes.operatorType() == OperatorType::Addition);
 	}
+
+	std::cout << "Operators OK" << std::endl;
+}
+
+void ebstTest() {
+    auto tree = EBST("(1+2)*(3/4)-(5+6)");
+
+    std::cout << tree.toString() << std::endl;
+    std::cout << tree.toString(EBST::OutputType::WithParenthese) << std::endl;
+    std::cout << tree.toString(EBST::OutputType::Postfix) << std::endl;
+    std::cout << tree.toString(EBST::OutputType::Prefix) << std::endl;
+
+    std::cout << "Tree OK" << std::endl;
 }
 
 int main() {
 	operandTest();
 	operatorTest();
+    ebstTest();
 
 	return 0;
 }

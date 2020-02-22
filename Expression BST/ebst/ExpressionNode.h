@@ -5,6 +5,7 @@
 #include <regex>
 #include <assert.h>
 #include <map>
+#include <ostream>
 
 const auto invalidOperandVarName = '?';
 
@@ -15,7 +16,9 @@ enum class OperatorType {
 	Division,
 	Multiplication,
 	Modulo,
-	Power
+	Power,
+	BracketLeft,
+	BracketRight
 };
 
 enum class ExpressionType {
@@ -39,19 +42,28 @@ public:
 	ExpressionType type() const;
 	OperatorType operatorType() const;
 	Operand operandValue() const;
+	int operatorPrecedence() const;
+
+    bool operator<(const ExpressionNode &rhs) const;
+    bool operator>(const ExpressionNode &rhs) const;
+    bool operator<=(const ExpressionNode &rhs) const;
+    bool operator>=(const ExpressionNode &rhs) const;
+
+    friend std::ostream &operator<<(std::ostream &os, const ExpressionNode &node);
+
+    std::string toString() const;
 
 private:
 	ExpressionNode(ExpressionType type);
 
-	union {
-		OperatorType m_operatorType = OperatorType::Invalid;
-		Operand m_operand;
-	};
-
+    OperatorType m_operatorType = OperatorType::Invalid;
+    Operand m_operand;
 	ExpressionType m_type = ExpressionType::Invalid;
 };
 
 std::optional<ExpressionNode> parseOperandNodeFromString(const std::string &str);
 std::optional<ExpressionNode> parseOperatorNodeFromChar(char op);
 
-bool isOperandUnknown(Operand op);
+bool isOperandUnknown(const Operand& op);
+bool isOperator(char c);
+bool isBracket(const ExpressionNode& ex);
