@@ -86,17 +86,20 @@ int main() {
 		tree.insert(i, std::to_string(i));
 	}
 
+	assert(tree.size() == 15);
+
 	for (auto it = tree.begin(); it != tree.end(); ++it) {
 		it->second = std::to_string(it->first * 2);
 	}
 
 	size_t i = 0;
 	for (auto it = tree.cbegin(); it != tree.cend(); ++it) {
+		std::cout << it->first << " ";
 		assert(it->second == std::to_string(it->first * 2));
 		++i;
 	}
 
-	assert(i == tree.size());
+	assert(i == tree.size()); // TODO BUG HERE
 
 	std::cout << "Iterators test OK" << std::endl;
 

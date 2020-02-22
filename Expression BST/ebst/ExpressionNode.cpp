@@ -35,6 +35,8 @@ Operand ExpressionNode::operandValue() const {
 
 ExpressionNode::ExpressionNode(ExpressionType type) : m_type(type) {}
 
+ExpressionNode::ExpressionNode() {}
+
 std::optional<ExpressionNode> parseOperandNodeFromString(const std::string &str) {
    std::smatch sm;
    if (std::regex_match(str, sm, std::regex(variableRegex))) {
@@ -45,7 +47,7 @@ std::optional<ExpressionNode> parseOperandNodeFromString(const std::string &str)
 
 	   return ExpressionNode(varName[0]);
    } else if (std::regex_match(str, sm, std::regex(numberRegex))) {
-	   assert(sm.size() > 0);
+	   assert(!sm.empty());
 
 	   const auto strNum = sm[0].str();
 	   const auto num = std::stod(strNum);
@@ -58,7 +60,7 @@ std::optional<ExpressionNode> parseOperandNodeFromString(const std::string &str)
 std::optional<ExpressionNode> parseOperatorNodeFromChar(char op) {
 	const std::map<char, OperatorType> charToOperandType {
 		{ '+', OperatorType::Addition },
-		{ '-', OperatorType::Subtitution },
+		{ '-', OperatorType::Substitution },
 		{ '/', OperatorType::Division },
 		{ '*', OperatorType::Multiplication },
 		{ '%', OperatorType::Modulo },

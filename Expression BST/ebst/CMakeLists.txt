@@ -1,5 +1,6 @@
 add_library(ebst STATIC
 	EBST.h
+	EBST.cpp
 	ExpressionNode.h
 	ExpressionNode.cpp
 )

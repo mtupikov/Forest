@@ -9,8 +9,9 @@
 const auto invalidOperandVarName = '?';
 
 enum class OperatorType {
+    Invalid,
 	Addition,
-	Subtitution,
+	Substitution,
 	Division,
 	Multiplication,
 	Modulo,
@@ -18,6 +19,7 @@ enum class OperatorType {
 };
 
 enum class ExpressionType {
+    Invalid,
 	Operator,
 	Operand
 };
@@ -29,6 +31,7 @@ struct Operand final {
 
 class ExpressionNode {
 public:
+    ExpressionNode();
 	explicit ExpressionNode(OperatorType type);
 	explicit ExpressionNode(double value);
 	explicit ExpressionNode(char variableName);
@@ -41,11 +44,11 @@ private:
 	ExpressionNode(ExpressionType type);
 
 	union {
-		OperatorType m_operatorType;
+		OperatorType m_operatorType = OperatorType::Invalid;
 		Operand m_operand;
 	};
 
-	ExpressionType m_type;
+	ExpressionType m_type = ExpressionType::Invalid;
 };
 
 std::optional<ExpressionNode> parseOperandNodeFromString(const std::string &str);

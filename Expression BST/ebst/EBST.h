@@ -36,7 +36,7 @@ private:
 
 	using NodePtr = typename Node::Ptr;
 
-	 void insert(const ExpressionNode& key, const bool& = false) override;
+	 void insert(const ExpressionNode& key, const bool&) override;
 	 NodePtr insert(NodePtr& node, const typename AbstractBaseTree::KVPair& keyValue) override;
 
 	 // unused stuff
