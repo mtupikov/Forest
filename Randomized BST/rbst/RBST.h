@@ -51,7 +51,7 @@ void RBST<K, V>::insert(const K& key, const V& value) {
 
 template <typename K, typename V>
 bool RBST<K, V>::remove(const K& key) {
-	if (!contains(key)) {
+	if (!this->contains(key)) {
 		return false;
 	}
 

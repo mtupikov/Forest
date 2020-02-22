@@ -79,3 +79,5 @@ venv/
 
 # build dirs
 build*/
+ebst_test
+rbst_test
