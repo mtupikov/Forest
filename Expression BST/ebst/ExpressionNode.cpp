@@ -1,6 +1,8 @@
 #include "ExpressionNode.h"
 
 #include <string>
+#include <cmath>
+#include <iostream>
 
 namespace {
 
@@ -79,13 +81,49 @@ std::ostream& operator<<(std::ostream& os, const ExpressionNode& node) {
     return os;
 }
 
+ExpressionNode ExpressionNode::operator*(const ExpressionNode& rhs) const {
+    return ExpressionNode(operandValue().value * rhs.operandValue().value);
+}
+
+ExpressionNode ExpressionNode::operator/(const ExpressionNode& rhs) const {
+    return ExpressionNode(operandValue().value / rhs.operandValue().value);
+}
+
+ExpressionNode ExpressionNode::operator+(const ExpressionNode& rhs) const {
+    return ExpressionNode(operandValue().value + rhs.operandValue().value);
+}
+
+ExpressionNode ExpressionNode::operator-(const ExpressionNode& rhs) const {
+    return ExpressionNode(operandValue().value - rhs.operandValue().value);
+}
+
+ExpressionNode ExpressionNode::operator%(const ExpressionNode& rhs) const {
+    auto result = std::remainder(operandValue().value, rhs.operandValue().value);
+    std::cout << operandValue().value << " " << rhs.operandValue().value << std::endl;
+    std::cout << result << std::endl;
+    return ExpressionNode(result);
+}
+
+ExpressionNode ExpressionNode::operator^(const ExpressionNode& rhs) const {
+    auto result = std::pow(operandValue().value, rhs.operandValue().value);
+    return ExpressionNode(result);
+}
+
 std::string ExpressionNode::toString() const {
     if (m_type == ExpressionType::Operand) {
         if (isOperandUnknown(m_operand)) {
             return { m_operand.variableName };
         }
 
-        return std::to_string(m_operand.value);
+        auto str = std::to_string(m_operand.value);
+
+        auto lastZeroPos = str.find_last_not_of('0');
+        if (lastZeroPos + 1 != str.length()) {
+            lastZeroPos += 2;
+            str.erase(lastZeroPos, std::string::npos);
+        }
+
+        return str;
     }
 
     const std::map<OperatorType, char> operatorToChar {

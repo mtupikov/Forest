@@ -49,6 +49,13 @@ public:
     bool operator<=(const ExpressionNode &rhs) const;
     bool operator>=(const ExpressionNode &rhs) const;
 
+    ExpressionNode operator*(const ExpressionNode &rhs) const;
+    ExpressionNode operator/(const ExpressionNode &rhs) const;
+    ExpressionNode operator+(const ExpressionNode &rhs) const;
+    ExpressionNode operator-(const ExpressionNode &rhs) const;
+    ExpressionNode operator%(const ExpressionNode &rhs) const;
+    ExpressionNode operator^(const ExpressionNode &rhs) const;
+
     friend std::ostream &operator<<(std::ostream &os, const ExpressionNode &node);
 
     std::string toString() const;

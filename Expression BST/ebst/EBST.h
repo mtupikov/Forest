@@ -4,10 +4,23 @@
 
 #include <AbstractBST.h>
 #include <vector>
+#include <exception>
 
 struct ExpressionResult {
 	char varName;
 	double varResult;
+};
+
+class ExpressionTreeException : public std::logic_error {
+public:
+    ExpressionTreeException(const std::string& message, int column);
+
+    std::string errorMessage() const;
+    int column() const;
+
+private:
+    std::string m_message;
+    int m_column;
 };
 
 class EBST : public AbstractBST<ExpressionNode, bool> {
@@ -15,11 +28,13 @@ public:
 	using AbstractBaseTree = AbstractBST<ExpressionNode, bool>;
 	using AbstractBaseTree::find;
 
-	enum OutputType {
-		Infix = 1 << 0,
-		Postfix = 1 << 1,
-		Prefix = 1 << 2,
-        WithParenthese = 1 << 3
+	enum class OutputType {
+		Infix,
+        InfixWithParentheses,
+        Postfix,
+		Prefix,
+        ReducedInfix,
+		ReducedInfixWithParentheses
 	};
 
 	explicit EBST(const std::string& expressionString);
@@ -42,21 +57,16 @@ private:
     std::string outputPrefix(const NodePtr& ptr) const;
 
     void buildTree(const std::vector<ExpressionNode>& expressionString);
+    void buildReducedFormTree();
+    NodePtr reduceNode(const NodePtr& parent);
     std::vector<ExpressionNode> parseExpression(const std::string& expressionString) const;
 
-    void insert(const ExpressionNode& key, const bool&) override;
-    NodePtr insert(NodePtr& node, const typename AbstractBaseTree::KVPair& keyValue) override;
+    NodePtr m_reducedTreeRootNode;
 
 	// unused stuff
-	bool remove(const ExpressionNode& key) override;
+    void insert(const ExpressionNode& key, const bool&) override;
+    NodePtr insert(NodePtr& node, const typename AbstractBaseTree::KVPair& keyValue) override;
+    bool remove(const ExpressionNode& key) override;
 	NodePtr remove(NodePtr &p, const ExpressionNode &key) override;
 	NodePtr find(const NodePtr& node, const ExpressionNode& key) const override;
 };
-
-inline EBST::OutputType operator|(EBST::OutputType a, EBST::OutputType b) {
-    return static_cast<EBST::OutputType>(static_cast<unsigned>(a) | static_cast<unsigned>(b));
-}
-
-inline EBST::OutputType operator&(EBST::OutputType a, EBST::OutputType b) {
-    return static_cast<EBST::OutputType>(static_cast<unsigned>(a) & static_cast<unsigned>(b));
-}
