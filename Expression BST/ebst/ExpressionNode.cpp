@@ -194,6 +194,10 @@ bool isOperator(char c) {
     return parseOperatorNodeFromChar(c).has_value();
 }
 
+bool isOperator(const ExpressionNode& node) {
+	return node.type() == ExpressionType ::Operator;
+}
+
 bool isBracket(const ExpressionNode &ex) {
     const auto type = ex.operatorType();
     return type == OperatorType::BracketLeft || type == OperatorType ::BracketRight;

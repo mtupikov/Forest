@@ -100,9 +100,7 @@ void ebstTest() {
     }
 
     try {
-        const auto tree = EBST("x^2 + (x - 0)");
-        std::cout << tree.toString(EBST::OutputType::Infix) << std::endl;
-        std::cout << tree.toString(EBST::OutputType::InfixWithParentheses) << std::endl;
+		const auto tree = EBST("x^2 + (2 * x) - (4 * x)");
         std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
     } catch (const ExpressionTreeException& ex) {
         std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;

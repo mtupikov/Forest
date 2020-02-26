@@ -61,6 +61,14 @@ private:
     NodePtr reduceNode(const NodePtr& parent);
     std::vector<ExpressionNode> parseExpression(const std::string& expressionString) const;
 
+	// helpers
+	NodePtr allocateNode(const ExpressionNode& node) const;
+	ExpressionNode getExpressionNode(const NodePtr& ptr) const;
+	NodePtr calculateTwoNumbers(const NodePtr& node, const ExpressionNode& leftExp, const ExpressionNode& rightExp) const;
+	bool nodeHasUnknownExpr(const NodePtr& ptr) const;
+	NodePtr evaluateSubTreeWithUnknowns(const NodePtr& ptr) const;
+	// helpers end
+
     NodePtr m_reducedTreeRootNode;
 
 	// unused stuff
@@ -69,4 +77,6 @@ private:
     bool remove(const ExpressionNode& key) override;
 	NodePtr remove(NodePtr &p, const ExpressionNode &key) override;
 	NodePtr find(const NodePtr& node, const ExpressionNode& key) const override;
+	iterator find(const ExpressionNode& key) const override;
+	iterator begin() const override;
 };

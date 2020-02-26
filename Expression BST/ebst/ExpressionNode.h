@@ -73,4 +73,5 @@ std::optional<ExpressionNode> parseOperatorNodeFromChar(char op);
 
 bool isOperandUnknown(const Operand& op);
 bool isOperator(char c);
+bool isOperator(const ExpressionNode& node);
 bool isBracket(const ExpressionNode& ex);
