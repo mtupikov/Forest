@@ -82,16 +82,25 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
         auto leftExp = getExpressionNode(newNode->m_left);
         auto rightExp = getExpressionNode(newNode->m_right);
 
-        if (!isOperator(leftExp)
-            && !isOperandUnknown(leftExp.operandValue())
-            && !isOperator(rightExp)
-            && !isOperandUnknown(rightExp.operandValue())) {
+		const auto leftExprIsOperator = isOperator(leftExp);
+		const auto leftExprIsUnknownOperand = !leftExprIsOperator && isOperandUnknown(leftExp.operandValue());
+		const auto rightExprIsOperator = isOperator(rightExp);
+		const auto rightExprIsUnknownOperand = !rightExprIsOperator && isOperandUnknown(rightExp.operandValue());
+
+		const auto onlyNumbers = !leftExprIsOperator && !leftExprIsUnknownOperand
+		                         && !rightExprIsOperator && !rightExprIsUnknownOperand;
+
+		const auto numberAndOperator = ((leftExprIsOperator && !rightExprIsOperator) && !rightExprIsUnknownOperand)
+		                                || ((!leftExprIsOperator && rightExprIsOperator) && !leftExprIsUnknownOperand);
+
+		if (onlyNumbers) {
             return calculateTwoNumbers(newNode, leftExp, rightExp);
-        } else if (nodeHasUnknownExpr(newNode)) {
+		} else if (numberAndOperator) {
+			auto& num = leftExprIsOperator ? rightExp : leftExp;
+			return evaluateOperatorAndNumber(newNode, num, leftExprIsOperator);
+		} else if (nodeHasUnknownExpr(newNode)) {
             return evaluateSubTreeWithUnknowns(newNode);
         }
-
-        return newNode;
     }
 
     return newNode;
@@ -359,6 +368,59 @@ EBST::NodePtr EBST::calculateTwoNumbers(const NodePtr& node, const ExpressionNod
 	case OperatorType::Division: return allocateNode(leftExp / rightExp);
 	case OperatorType::Modulo: return allocateNode(leftExp % rightExp);
 	case OperatorType::Power: return allocateNode(leftExp ^ rightExp);
+	default: assert(false && "invalid operator");
+	}
+
+	return NodePtr();
+}
+
+EBST::NodePtr EBST::evaluateOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const {
+	const auto expressionOperator = getExpressionNode(node);
+	const auto numberIsZero = number.operandValue().value == 0.0;
+
+	if (!numberIsZero) {
+		return node;
+	}
+
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto resetLeftRight = [&left, &right] {
+		left.reset();
+		right.reset();
+	};
+
+	switch (expressionOperator.operatorType()) {
+	case OperatorType::Addition:
+	case OperatorType::Substitution: {
+		node = leftIsOp ? node->m_left : node->m_right;
+		return node;
+	}
+	case OperatorType::Multiplication: {
+		resetLeftRight();
+		node->m_keyValue.first = ExpressionNode(0.0);
+		return node;
+	}
+	case OperatorType::Division:
+	case OperatorType::Modulo: {
+		if (leftIsOp) {
+			throw ExpressionTreeException("Division by zero", 0);
+		} else {
+			resetLeftRight();
+			node->m_keyValue.first = ExpressionNode(0.0);
+		}
+		return node;
+	}
+	case OperatorType::Power: {
+		if (leftIsOp) {
+			resetLeftRight();
+			node->m_keyValue.first = ExpressionNode(1.0);
+		} else {
+			resetLeftRight();
+			node->m_keyValue.first = ExpressionNode(0.0);
+		}
+		return node;
+	}
 	default: assert(false && "invalid operator");
 	}
 
