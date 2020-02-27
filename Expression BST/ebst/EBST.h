@@ -66,6 +66,16 @@ private:
 	ExpressionNode getExpressionNode(const NodePtr& ptr) const;
 	NodePtr calculateTwoNumbers(const NodePtr& node, const ExpressionNode& leftExp, const ExpressionNode& rightExp) const;
 	NodePtr evaluateOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const;
+
+	NodePtr evaluateTwoOperators(NodePtr& parent) const;
+	NodePtr evaluateTwoOperatorsWithParentSubstitution(NodePtr& parent) const;
+	NodePtr evaluateTwoOperatorsWithParentAddition(NodePtr& parent) const;
+	NodePtr evaluateTwoOperatorsWithParentMultiplication(NodePtr& parent) const;
+	NodePtr evaluateTwoOperatorsWithParentDivision(NodePtr& parent) const;
+	NodePtr evaluateTwoOperatorsWithParentModulo(NodePtr& parent) const;
+	NodePtr evaluateTwoOperatorsWithParentPower(NodePtr& parent) const;
+
+	bool subTreeIsUnknownWithNumber(const NodePtr& node) const;
 	bool nodeHasUnknownExpr(const NodePtr& ptr) const;
 	NodePtr evaluateSubTreeWithUnknowns(const NodePtr& ptr) const;
 	// helpers end
