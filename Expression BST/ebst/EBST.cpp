@@ -89,7 +89,8 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
 		const auto rightExprIsOperator = isOperator(rightExp);
 		const auto rightExprIsUnknownOperand = !rightExprIsOperator && isOperandUnknown(rightExp.operandValue());
 
-		const auto onlyNumbers = !leftExprIsUnknownOperand && !rightExprIsUnknownOperand;
+		const auto onlyNumbers = !leftExprIsOperator && !leftExprIsUnknownOperand
+		                         && !rightExprIsOperator && !rightExprIsUnknownOperand;
 
 		const auto numberAndOperator = ((leftExprIsOperator && !rightExprIsOperator) && !rightExprIsUnknownOperand)
 		                                || ((!leftExprIsOperator && rightExprIsOperator) && !leftExprIsUnknownOperand);
@@ -142,13 +143,13 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             --it;
 
             if (strVal.length() > 1) {
-                throw ExpressionTreeException("Unknown operand must be 1 character", std::distance(expr.cbegin(), it));
+				throw ExpressionTreeException("Unknown operand must be 1 character", static_cast<int>(std::distance(expr.cbegin(), it)));
             }
 
             return parseOperandNodeFromString(strVal);
         }
 
-        throw ExpressionTreeException("Invalid token", std::distance(expr.cbegin(), it));
+		throw ExpressionTreeException("Invalid token", static_cast<int>(std::distance(expr.cbegin(), it)));
         return std::nullopt;
     };
 
@@ -198,7 +199,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             if (pOp.has_value()) {
                 stack.push(pOp.value());
             } else {
-                throw ExpressionTreeException("Left bracket is invalid", std::distance(expr.cbegin(), it));
+				throw ExpressionTreeException("Left bracket is invalid", static_cast<int>(std::distance(expr.cbegin(), it)));
             }
         } else if (c == ')') {
             auto top = stack.top();
@@ -206,7 +207,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
                 output.push_back(top);
                 stack.pop();
                 if (stack.empty()) {
-                    throw ExpressionTreeException("Missing '(' parentheses" , std::distance(expr.cbegin(), it));
+					throw ExpressionTreeException("Missing '(' parentheses" , static_cast<int>(std::distance(expr.cbegin(), it)));
                 }
                 top = stack.top();
             }
@@ -216,14 +217,14 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             }
         } else {
             if (lastExpressionNode.has_value() && lastExpressionNode.value().type() == ExpressionType::Operand) {
-                throw ExpressionTreeException("Missing operator between operands" , std::distance(expr.cbegin(), it));
+				throw ExpressionTreeException("Missing operator between operands" , static_cast<int>(std::distance(expr.cbegin(), it)));
             }
 
             pOp = readToken(it);
             if (pOp.has_value()) {
                 output.push_back(pOp.value());
             } else {
-                throw ExpressionTreeException("Invalid operand" , std::distance(expr.cbegin(), it));
+				throw ExpressionTreeException("Invalid operand" , static_cast<int>(std::distance(expr.cbegin(), it)));
             }
         }
 
@@ -233,7 +234,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
     while (!stack.empty()) {
         auto rToken = stack.top();
         if (isBracket(rToken)) {
-            throw ExpressionTreeException("Missing ')' parentheses" , std::distance(expr.cbegin(), expr.cend()));
+			throw ExpressionTreeException("Missing ')' parentheses" , static_cast<int>(std::distance(expr.cbegin(), expr.cend())));
         }
         output.push_back(rToken);
         stack.pop();
