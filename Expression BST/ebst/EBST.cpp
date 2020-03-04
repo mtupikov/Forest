@@ -77,9 +77,7 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
     auto right = parent->m_right;
     if (left && right) {
         newNode->m_left = reduceNode(left);
-		newNode->m_left->m_parent = newNode;
         newNode->m_right = reduceNode(right);
-		newNode->m_right->m_parent = newNode;
 
         auto leftExp = getExpressionNode(newNode->m_left);
         auto rightExp = getExpressionNode(newNode->m_right);
@@ -158,9 +156,13 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
         return next != expr.cend() && std::isdigit(*next);
     };
 
-    const auto lastExpressionNodeIsOperator = [](const std::optional<ExpressionNode>& op) {
+	const auto expressionNodeIsOperator = [](const std::optional<ExpressionNode>& op) {
         return op.has_value() && op.value().type() == ExpressionType::Operator;
     };
+
+	const auto distanceFromBegin = [&expr](const auto& it) {
+		return static_cast<int>(std::distance(expr.cbegin(), it));
+	};
 
     std::optional<ExpressionNode> lastExpressionNode;
     for (auto it = expr.cbegin(); it < expr.cend(); ++it) {
@@ -172,12 +174,17 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
 
         auto pOp = parseOperatorNodeFromChar(c);
 
-        const auto nextTokenIsNumberAndPrevIsLeftBracket = nextTokenIsNumber(it)
-                                                        && lastExpressionNodeIsOperator(lastExpressionNode);
+		const auto nextTokenIsNumberAndPrevIsOperator = nextTokenIsNumber(it)
+		                                                && expressionNodeIsOperator(lastExpressionNode);
 
         if (pOp.has_value() && !isBracket(pOp.value())
-            && !nextTokenIsNumberAndPrevIsLeftBracket) {
-            auto op = pOp.value();
+		    && !nextTokenIsNumberAndPrevIsOperator) {
+
+			if (expressionNodeIsOperator(lastExpressionNode) && !isBracket(lastExpressionNode.value())) {
+				throw ExpressionTreeException("Operator can't be placed after another operator", distanceFromBegin(it));
+			}
+
+			auto op = pOp.value();
 
             if (!stack.empty()) {
                 auto top = stack.top();
@@ -199,7 +206,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             if (pOp.has_value()) {
                 stack.push(pOp.value());
             } else {
-				throw ExpressionTreeException("Left bracket is invalid", static_cast<int>(std::distance(expr.cbegin(), it)));
+				throw ExpressionTreeException("Left bracket is invalid", distanceFromBegin(it));
             }
         } else if (c == ')') {
             auto top = stack.top();
@@ -207,7 +214,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
                 output.push_back(top);
                 stack.pop();
                 if (stack.empty()) {
-					throw ExpressionTreeException("Missing '(' parentheses" , static_cast<int>(std::distance(expr.cbegin(), it)));
+					throw ExpressionTreeException("Missing '(' parentheses" , distanceFromBegin(it));
                 }
                 top = stack.top();
             }
@@ -217,14 +224,14 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             }
         } else {
             if (lastExpressionNode.has_value() && lastExpressionNode.value().type() == ExpressionType::Operand) {
-				throw ExpressionTreeException("Missing operator between operands" , static_cast<int>(std::distance(expr.cbegin(), it)));
+				throw ExpressionTreeException("Missing operator between operands" , distanceFromBegin(it));
             }
 
             pOp = readToken(it);
             if (pOp.has_value()) {
                 output.push_back(pOp.value());
             } else {
-				throw ExpressionTreeException("Invalid operand" , static_cast<int>(std::distance(expr.cbegin(), it)));
+				throw ExpressionTreeException("Invalid operand" , distanceFromBegin(it));
             }
         }
 
@@ -234,7 +241,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
     while (!stack.empty()) {
         auto rToken = stack.top();
         if (isBracket(rToken)) {
-			throw ExpressionTreeException("Missing ')' parentheses" , static_cast<int>(std::distance(expr.cbegin(), expr.cend())));
+			throw ExpressionTreeException("Missing ')' parentheses" , distanceFromBegin(expr.cend()));
         }
         output.push_back(rToken);
         stack.pop();
@@ -270,6 +277,8 @@ EBST::NodePtr EBST::evaluateSubTreeWithUnknowns(const NodePtr& ptr) const {
 	const auto leftAndRightUnknown = leftIsUnknown && rightIsUnknown;
 	const auto leftUnknownRightZero = leftIsUnknown && rightExpr.operandValue().value == 0.0;
 	const auto rightUnknownLeftZero = rightIsUnknown && leftExpr.operandValue().value == 0.0;
+	const auto leftUnknownRightOne = leftIsUnknown && rightExpr.operandValue().value == 1.0;
+	const auto rightUnknownLeftOne = rightIsUnknown && leftExpr.operandValue().value == 1.0;
 
 	const auto resetLeftRight = [&left, &right] {
 		left.reset();
@@ -308,6 +317,12 @@ EBST::NodePtr EBST::evaluateSubTreeWithUnknowns(const NodePtr& ptr) const {
 		} else if (leftUnknownRightZero || rightUnknownLeftZero) {
 			resetLeftRight();
 			ptr->m_keyValue.first = ExpressionNode(0.0);
+		} else if (leftUnknownRightOne) {
+			ptr->m_keyValue.first = leftExpr;
+			resetLeftRight();
+		} else if (rightUnknownLeftOne) {
+			ptr->m_keyValue.first = rightExpr;
+			resetLeftRight();
 		}
 		break;
 	}
@@ -320,6 +335,9 @@ EBST::NodePtr EBST::evaluateSubTreeWithUnknowns(const NodePtr& ptr) const {
 		} else if (rightUnknownLeftZero) {
 			resetLeftRight();
 			ptr->m_keyValue.first = ExpressionNode(0.0);
+		} else if (leftUnknownRightOne) {
+			ptr->m_keyValue.first = leftExpr;
+			resetLeftRight();
 		}
 		break;
 	}
@@ -332,6 +350,9 @@ EBST::NodePtr EBST::evaluateSubTreeWithUnknowns(const NodePtr& ptr) const {
 		} else if (rightUnknownLeftZero) {
 			resetLeftRight();
 			ptr->m_keyValue.first = ExpressionNode(0.0);
+		} else if (leftUnknownRightOne) {
+			ptr->m_keyValue.first = leftExpr;
+			resetLeftRight();
 		}
 		break;
 	}
@@ -344,6 +365,12 @@ EBST::NodePtr EBST::evaluateSubTreeWithUnknowns(const NodePtr& ptr) const {
 		} else if (rightUnknownLeftZero) {
 			resetLeftRight();
 			ptr->m_keyValue.first = ExpressionNode(0.0);
+		} else if (leftUnknownRightOne) {
+			ptr->m_keyValue.first = leftExpr;
+			resetLeftRight();
+		} else if (rightUnknownLeftOne) {
+			resetLeftRight();
+			ptr->m_keyValue.first = ExpressionNode(1.0);
 		}
 		break;
 	}
@@ -381,8 +408,9 @@ EBST::NodePtr EBST::calculateTwoNumbers(const NodePtr& node, const ExpressionNod
 EBST::NodePtr EBST::evaluateOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const {
 	const auto expressionOperator = getExpressionNode(node);
 	const auto numberIsZero = number.operandValue().value == 0.0;
+	const auto numberIsOne = number.operandValue().value == 1.0;
 
-	if (!numberIsZero) {
+	if (!numberIsZero && !numberIsOne) {
 		return node;
 	}
 
@@ -397,31 +425,50 @@ EBST::NodePtr EBST::evaluateOperatorAndNumber(NodePtr& node, const ExpressionNod
 	switch (expressionOperator.operatorType()) {
 	case OperatorType::Addition:
 	case OperatorType::Substitution: {
-		node = leftIsOp ? node->m_left : node->m_right;
+		if (numberIsZero) {
+			node = leftIsOp ? node->m_left : node->m_right;
+		}
 		return node;
 	}
 	case OperatorType::Multiplication: {
-		resetLeftRight();
-		node->m_keyValue.first = ExpressionNode(0.0);
+		if (numberIsZero) {
+			resetLeftRight();
+			node->m_keyValue.first = ExpressionNode(0.0);
+		} else {
+			node = leftIsOp ? left : right;
+		}
 		return node;
 	}
 	case OperatorType::Division:
 	case OperatorType::Modulo: {
-		if (leftIsOp) {
-			throw ExpressionTreeException("Division by zero", 0);
-		} else {
-			resetLeftRight();
-			node->m_keyValue.first = ExpressionNode(0.0);
+		if (numberIsZero) {
+			if (leftIsOp) {
+				throw ExpressionTreeException("Division by zero", 0);
+			} else {
+				resetLeftRight();
+				node->m_keyValue.first = ExpressionNode(0.0);
+			}
+		} else if (leftIsOp) {
+			node = leftIsOp ? left : right;
 		}
 		return node;
 	}
 	case OperatorType::Power: {
-		if (leftIsOp) {
-			resetLeftRight();
-			node->m_keyValue.first = ExpressionNode(1.0);
+		if (numberIsZero) {
+			if (leftIsOp) {
+				resetLeftRight();
+				node->m_keyValue.first = ExpressionNode(1.0);
+			} else {
+				resetLeftRight();
+				node->m_keyValue.first = ExpressionNode(0.0);
+			}
 		} else {
-			resetLeftRight();
-			node->m_keyValue.first = ExpressionNode(0.0);
+			if (leftIsOp) {
+				node = leftIsOp ? left : right;
+			} else {
+				resetLeftRight();
+				node->m_keyValue.first = ExpressionNode(1.0);
+			}
 		}
 		return node;
 	}
