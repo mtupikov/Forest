@@ -39,7 +39,60 @@ std::string EBST::toString(OutputType type) const {
 }
 
 std::vector<ExpressionResult> EBST::calculateResult() const {
-    return std::vector<ExpressionResult>();
+	return std::vector<ExpressionResult>();
+}
+
+bool EBST::nodeHasChildren(const NodePtr& node) const {
+	return node->m_left && node->m_right;
+}
+
+EBST::NodeRule EBST::getRuleForSubtree(const NodePtr& node) const {
+	if (!nodeHasChildren(node)) {
+		return getRuleForNode(node);
+	}
+
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto nodeRule = getRuleForNode(node);
+	const auto leftSubRule = getRuleForSubtree(left);
+	const auto rightSubRule = getRuleForSubtree(right);
+	const auto leftRule = leftSubRule == NodeRule::NoRule ? NodeRule::Subtree : leftSubRule;
+	const auto rightRule = rightSubRule == NodeRule::NoRule ? NodeRule::Subtree : rightSubRule;
+
+	if (nodeRule != NodeRule::NoRule && leftRule != NodeRule::NoRule && rightRule != NodeRule::NoRule) {
+		std::cout << "node rule: " << nodeRule << std::endl;
+		std::cout << "left rule: " << leftRule << std::endl;
+		std::cout << "right rule: " << rightRule << std::endl;
+	}
+
+	return nodeRule | leftRule | rightRule;
+}
+
+EBST::NodeRule EBST::getRuleForNode(const NodePtr& node) const {
+	const auto expr = node->m_keyValue.first;
+
+	switch (expr.type()) {
+	case ExpressionType::Operand: {
+		if (isOperandUnknown(expr.operandValue())) {
+			return NodeRule::UnknownVar;
+		}
+
+		return NodeRule::NumberVar;
+	}
+	case ExpressionType::Operator: {
+		const auto opType = expr.operatorType();
+		if (opType == OperatorType::Multiplication) {
+			return NodeRule::Multiplication;
+		} else if (opType == OperatorType::Addition || opType == OperatorType::Substitution) {
+			return NodeRule::AdditionSubstitution;
+		}
+		break;
+	}
+	default: return NodeRule::NoRule;
+	}
+
+	return NodeRule::NoRule;
 }
 
 void EBST::buildTree(const std::vector<ExpressionNode>& expr) {
@@ -256,7 +309,7 @@ bool EBST::nodeHasUnknownExpr(const NodePtr& ptr) const {
 	auto left = ptr->m_left;
 	auto right = ptr->m_right;
 
-	if (!left || !right) {
+	if (!nodeHasChildren(ptr)) {
 		return false;
 	}
 
@@ -481,22 +534,41 @@ EBST::NodePtr EBST::evaluateOperatorAndNumber(NodePtr& node, const ExpressionNod
 }
 
 EBST::NodePtr EBST::applyRulesToSubTree(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
+	const auto rule = getRuleForSubtree(parent);
 
-	return parent;
-	//TODO
+	std::cout << outputInfix(parent, true) << " : " << rule << std::endl;
 
-	auto parentExp = getExpressionNode(parent);
+	switch (rule) {
+	case NodeRule::Rule1: {
+		std::cout << "rule 1" << std::endl;
+		break;
+	}
+	case NodeRule::Rule2: {
+		std::cout << "rule 2" << std::endl;
 
-	switch (parentExp.operatorType()) {
-//	case OperatorType::Substitution:
-//	case OperatorType::Addition:
-//	case OperatorType::Multiplication:
-//	case OperatorType::Division:
-//	case OperatorType::Modulo:
-//	case OperatorType::Power:
-	default: assert(false && "invalid operator");
+		break;
+	}
+	case NodeRule::Rule3: {
+		std::cout << "rule 3" << std::endl;
+
+		break;
+	}
+	case NodeRule::Rule4: {
+		std::cout << "rule 4" << std::endl;
+
+		break;
+	}
+	case NodeRule::Rule5: {
+		std::cout << "rule 5" << std::endl;
+
+		break;
+	}
+	case NodeRule::Rule6: {
+		std::cout << "rule 6" << std::endl;
+
+		break;
+	}
+	default: return parent;
 	}
 
 	return parent;
@@ -506,7 +578,7 @@ bool EBST::subTreeIsUnknownWithNumber(const NodePtr& node) const {
 	auto& left = node->m_left;
 	auto& right = node->m_right;
 
-	if (!left && !right) {
+	if (!nodeHasChildren(node)) {
 		return false;
 	}
 
@@ -525,7 +597,7 @@ std::string EBST::outputInfix(const NodePtr& ptr, bool withBrackets) const {
     std::string result;
 
     if (ptr) {
-        auto typeIsOperator = ptr->m_keyValue.first.type() == ExpressionType ::Operator;
+		auto typeIsOperator = ptr->m_keyValue.first.type() == ExpressionType::Operator;
 
         if (withBrackets && typeIsOperator) {
             result += '(';
@@ -573,6 +645,10 @@ std::string EBST::outputPrefix(const EBST::NodePtr &ptr) const {
     }
 
     return result;
+}
+
+EBST::NodeRule operator|(EBST::NodeRule a, EBST::NodeRule b) {
+	return static_cast<EBST::NodeRule>(static_cast<int>(a) | static_cast<int>(b));
 }
 
 // unused stuff

@@ -49,8 +49,39 @@ private:
 
 		typename AbstractBaseTree::AbstractNode::Ptr next() const override;
 	};
-
 	using NodePtr = typename Node::Ptr;
+
+	enum NodeRule {
+		Subtree = 1 << 0,
+		UnknownVar = 1 << 1,
+		NumberVar = 1 << 2,
+		UnknownAndSubtree = 1 << 3,
+		NumberAndSubtree = 1 << 4,
+
+		Multiplication = 1 << 5,
+		AdditionSubstitution = 1 << 6,
+
+		NoRule = 1 << 10,
+
+		UnknownAndSubtreeMul = UnknownAndSubtree | Multiplication,
+		UnknownAndSubtreeAddSub = UnknownAndSubtree | AdditionSubstitution,
+		NumberAndSubtreeMul = NumberAndSubtree | Multiplication,
+		NumberAndSubtreeAddSub = NumberAndSubtree | AdditionSubstitution,
+
+		Rule1 = Subtree | Multiplication | UnknownAndSubtreeMul, // ((x * A) * B) -> (x * (A * B))
+		Rule2 = Subtree | Multiplication | NumberAndSubtreeMul, // ((n * A) * B) -> (n * (A * B))
+		Rule3 = UnknownAndSubtreeMul | UnknownAndSubtreeMul | AdditionSubstitution, // ((x * A) + (x * B)) -> (x * (A + B))
+		Rule4 = NumberAndSubtreeMul | NumberAndSubtreeMul | AdditionSubstitution, // ((n * A) + (n * B)) -> (n * (A + B))
+		Rule5 = Subtree | UnknownAndSubtreeAddSub | AdditionSubstitution, // (A + (x + B)) -> (x + (A + B))
+		Rule6 = Subtree | NumberAndSubtreeAddSub | AdditionSubstitution, // (A + (n + B)) -> (n + (A + B))
+	};
+
+	friend NodeRule operator|(NodeRule a, NodeRule b);
+
+	bool nodeHasChildren(const NodePtr& node) const;
+
+	NodeRule getRuleForSubtree(const NodePtr& node) const;
+	NodeRule getRuleForNode(const NodePtr& node) const;
 
     std::string outputInfix(const NodePtr& ptr, bool withBrackets) const;
     std::string outputPostfix(const NodePtr& ptr) const;
