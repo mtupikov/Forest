@@ -79,6 +79,8 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
         newNode->m_left = reduceNode(left);
         newNode->m_right = reduceNode(right);
 
+		newNode = applyRulesToSubTree(newNode);
+
         auto leftExp = getExpressionNode(newNode->m_left);
         auto rightExp = getExpressionNode(newNode->m_right);
 
@@ -94,18 +96,18 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
 		                                || ((!leftExprIsOperator && rightExprIsOperator) && !leftExprIsUnknownOperand);
 
 		if (onlyNumbers) {
-            return calculateTwoNumbers(newNode, leftExp, rightExp);
+			return calculateTwoNumbers(newNode, leftExp, rightExp);
 		} else if (numberAndOperator) {
 			auto& num = leftExprIsOperator ? rightExp : leftExp;
 			return evaluateOperatorAndNumber(newNode, num, leftExprIsOperator);
-		} else if (leftExprIsOperator && rightExprIsOperator) {
-			return evaluateTwoOperators(newNode);
 		} else if (nodeHasUnknownExpr(newNode)) {
-            return evaluateSubTreeWithUnknowns(newNode);
+			return evaluateSubTreeWithUnknowns(newNode);
         }
-    }
 
-    return newNode;
+		return newNode;
+	}
+
+	return newNode;
 }
 
 std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const {
@@ -478,113 +480,24 @@ EBST::NodePtr EBST::evaluateOperatorAndNumber(NodePtr& node, const ExpressionNod
 	return NodePtr();
 }
 
-EBST::NodePtr EBST::evaluateTwoOperators(NodePtr& parent) const {
+EBST::NodePtr EBST::applyRulesToSubTree(NodePtr& parent) const {
 	auto& left = parent->m_left;
 	auto& right = parent->m_right;
 
-	if (subTreeIsUnknownWithNumber(left) && subTreeIsUnknownWithNumber(right)) {
-		auto parentExp = getExpressionNode(parent);
+	return parent;
+	//TODO
 
-		switch (parentExp.operatorType()) {
-		case OperatorType::Substitution: return evaluateTwoOperatorsWithParentSubstitution(parent);
-		case OperatorType::Addition: return evaluateTwoOperatorsWithParentAddition(parent);
-		case OperatorType::Multiplication: return evaluateTwoOperatorsWithParentMultiplication(parent);
-		case OperatorType::Division: return evaluateTwoOperatorsWithParentDivision(parent);
-		case OperatorType::Modulo: return evaluateTwoOperatorsWithParentModulo(parent);
-		case OperatorType::Power: return evaluateTwoOperatorsWithParentPower(parent);
-		default: assert(false && "invalid operator");
-		}
+	auto parentExp = getExpressionNode(parent);
+
+	switch (parentExp.operatorType()) {
+//	case OperatorType::Substitution:
+//	case OperatorType::Addition:
+//	case OperatorType::Multiplication:
+//	case OperatorType::Division:
+//	case OperatorType::Modulo:
+//	case OperatorType::Power:
+	default: assert(false && "invalid operator");
 	}
-
-	return parent;
-}
-
-EBST::NodePtr EBST::evaluateTwoOperatorsWithParentSubstitution(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
-
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
-	auto leftLeftExp = getExpressionNode(left->m_left);
-	auto leftRightExp = getExpressionNode(left->m_right);
-	auto rightLeftExp = getExpressionNode(right->m_left);
-	auto rightRightExp = getExpressionNode(right->m_right);
-
-
-	return parent;
-}
-
-EBST::NodePtr EBST::evaluateTwoOperatorsWithParentAddition(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
-
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
-	auto leftLeftExp = getExpressionNode(left->m_left);
-	auto leftRightExp = getExpressionNode(left->m_right);
-	auto rightLeftExp = getExpressionNode(right->m_left);
-	auto rightRightExp = getExpressionNode(right->m_right);
-
-
-	return parent;
-}
-
-EBST::NodePtr EBST::evaluateTwoOperatorsWithParentMultiplication(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
-
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
-	auto leftLeftExp = getExpressionNode(left->m_left);
-	auto leftRightExp = getExpressionNode(left->m_right);
-	auto rightLeftExp = getExpressionNode(right->m_left);
-	auto rightRightExp = getExpressionNode(right->m_right);
-
-
-	return parent;
-}
-
-EBST::NodePtr EBST::evaluateTwoOperatorsWithParentDivision(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
-
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
-	auto leftLeftExp = getExpressionNode(left->m_left);
-	auto leftRightExp = getExpressionNode(left->m_right);
-	auto rightLeftExp = getExpressionNode(right->m_left);
-	auto rightRightExp = getExpressionNode(right->m_right);
-
-
-	return parent;
-}
-
-EBST::NodePtr EBST::evaluateTwoOperatorsWithParentModulo(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
-
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
-	auto leftLeftExp = getExpressionNode(left->m_left);
-	auto leftRightExp = getExpressionNode(left->m_right);
-	auto rightLeftExp = getExpressionNode(right->m_left);
-	auto rightRightExp = getExpressionNode(right->m_right);
-
-
-	return parent;
-}
-
-EBST::NodePtr EBST::evaluateTwoOperatorsWithParentPower(NodePtr& parent) const {
-	auto& left = parent->m_left;
-	auto& right = parent->m_right;
-
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
-	auto leftLeftExp = getExpressionNode(left->m_left);
-	auto leftRightExp = getExpressionNode(left->m_right);
-	auto rightLeftExp = getExpressionNode(right->m_left);
-	auto rightRightExp = getExpressionNode(right->m_right);
-
 
 	return parent;
 }
