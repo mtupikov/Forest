@@ -52,31 +52,33 @@ private:
 	using NodePtr = typename Node::Ptr;
 
 	enum NodeRule {
-		Subtree = 1 << 0,
+		Subtree = 1 << 0, // A
 		UnknownVar = 1 << 1,
 		NumberVar = 1 << 2,
-		UnknownAndSubtree = 1 << 3,
-		NumberAndSubtree = 1 << 4,
-
-		Multiplication = 1 << 5,
-		AdditionSubstitution = 1 << 6,
+		Multiplication = 1 << 3,
+		AdditionSubstitution = 1 << 4,
 
 		NoRule = 1 << 10,
 
-		UnknownAndSubtreeMul = UnknownAndSubtree | Multiplication,
+		UnknownAndSubtree = UnknownVar | Subtree,
+		NumberAndSubtree = NumberVar | Subtree,
+
+		UnknownAndSubtreeMul = UnknownAndSubtree | Multiplication, // (x * A)
 		UnknownAndSubtreeAddSub = UnknownAndSubtree | AdditionSubstitution,
 		NumberAndSubtreeMul = NumberAndSubtree | Multiplication,
 		NumberAndSubtreeAddSub = NumberAndSubtree | AdditionSubstitution,
 
-		Rule1 = Subtree | Multiplication | UnknownAndSubtreeMul, // ((x * A) * B) -> (x * (A * B))
-		Rule2 = Subtree | Multiplication | NumberAndSubtreeMul, // ((n * A) * B) -> (n * (A * B))
-		Rule3 = UnknownAndSubtreeMul | UnknownAndSubtreeMul | AdditionSubstitution, // ((x * A) + (x * B)) -> (x * (A + B))
-		Rule4 = NumberAndSubtreeMul | NumberAndSubtreeMul | AdditionSubstitution, // ((n * A) + (n * B)) -> (n * (A + B))
-		Rule5 = Subtree | UnknownAndSubtreeAddSub | AdditionSubstitution, // (A + (x + B)) -> (x + (A + B))
-		Rule6 = Subtree | NumberAndSubtreeAddSub | AdditionSubstitution, // (A + (n + B)) -> (n + (A + B))
+		Rule1 = Subtree * Multiplication * UnknownAndSubtreeMul, // ((x * A) * B) -> (x * (A * B))
+		Rule2 = Subtree * Multiplication * NumberAndSubtreeMul, // ((n * A) * B) -> (n * (A * B))
+		Rule3 = UnknownAndSubtreeMul * UnknownAndSubtreeMul * AdditionSubstitution, // ((x * A) + (x * B)) -> (x * (A + B))
+		Rule4 = NumberAndSubtreeMul * NumberAndSubtreeMul * AdditionSubstitution, // ((n * A) + (n * B)) -> (n * (A + B))
+		Rule5 = Subtree * UnknownAndSubtreeAddSub * AdditionSubstitution, // (A + (x + B)) -> (x + (A + B))
+		Rule6 = Subtree * NumberAndSubtreeAddSub * AdditionSubstitution, // (A + (n + B)) -> (n + (A + B))
 	};
 
 	friend NodeRule operator|(NodeRule a, NodeRule b);
+
+	NodeRule validateRules(const NodeRule rule1, const NodeRule rule2, const NodeRule rule3) const;
 
 	bool nodeHasChildren(const NodePtr& node) const;
 
