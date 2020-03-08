@@ -53,27 +53,27 @@ private:
 
 	enum NodeRule {
 		Subtree = 1 << 0, // A
-		UnknownVar = 1 << 1,
-		NumberVar = 1 << 2,
-		Multiplication = 1 << 3,
-		AdditionSubstitution = 1 << 4,
+		UnknownVar = 1 << 1, // x
+		NumberVar = 1 << 2, // n
+		Multiplication = 1 << 3, // *
+		AdditionSubstitution = 1 << 4, // +-
 
 		NoRule = 1 << 10,
 
-		UnknownAndSubtree = UnknownVar | Subtree,
-		NumberAndSubtree = NumberVar | Subtree,
+		UnknownAndSubtree = UnknownVar | Subtree, // (x ? A)
+		NumberAndSubtree = NumberVar | Subtree, // (n ? A)
 
 		UnknownAndSubtreeMul = UnknownAndSubtree | Multiplication, // (x * A)
-		UnknownAndSubtreeAddSub = UnknownAndSubtree | AdditionSubstitution,
-		NumberAndSubtreeMul = NumberAndSubtree | Multiplication,
-		NumberAndSubtreeAddSub = NumberAndSubtree | AdditionSubstitution,
+		UnknownAndSubtreeAddSub = UnknownAndSubtree | AdditionSubstitution, // (x +- A)
+		NumberAndSubtreeMul = NumberAndSubtree | Multiplication, // (n * A)
+		NumberAndSubtreeAddSub = NumberAndSubtree | AdditionSubstitution, // (n +- A)
 
 		Rule1 = Subtree * Multiplication * UnknownAndSubtreeMul, // ((x * A) * B) -> (x * (A * B))
 		Rule2 = Subtree * Multiplication * NumberAndSubtreeMul, // ((n * A) * B) -> (n * (A * B))
-		Rule3 = UnknownAndSubtreeMul * UnknownAndSubtreeMul * AdditionSubstitution, // ((x * A) + (x * B)) -> (x * (A + B))
-		Rule4 = NumberAndSubtreeMul * NumberAndSubtreeMul * AdditionSubstitution, // ((n * A) + (n * B)) -> (n * (A + B))
-		Rule5 = Subtree * UnknownAndSubtreeAddSub * AdditionSubstitution, // (A + (x + B)) -> (x + (A + B))
-		Rule6 = Subtree * NumberAndSubtreeAddSub * AdditionSubstitution, // (A + (n + B)) -> (n + (A + B))
+		Rule3 = UnknownAndSubtreeMul * UnknownAndSubtreeMul * AdditionSubstitution, // ((x * A) +- (x * B)) -> (x * (A +- B))
+		Rule4 = NumberAndSubtreeMul * NumberAndSubtreeMul * AdditionSubstitution, // ((n * A) +- (n * B)) -> (n * (A +- B))
+		Rule5 = Subtree * UnknownAndSubtreeAddSub * AdditionSubstitution, // (A +- (x +- B)) -> (x +- (A +- B))
+		Rule6 = Subtree * NumberAndSubtreeAddSub * AdditionSubstitution, // (A +- (n +- B)) -> (n +- (A +- B))
 	};
 
 	friend NodeRule operator|(NodeRule a, NodeRule b);
@@ -101,6 +101,12 @@ private:
 	NodePtr evaluateOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const;
 
 	NodePtr applyRulesToSubTree(NodePtr& parent) const;
+	NodePtr applyRule1ToSubTree(NodePtr& parent) const;
+	NodePtr applyRule2ToSubTree(NodePtr& parent) const;
+	NodePtr applyRule3ToSubTree(NodePtr& parent) const;
+	NodePtr applyRule4ToSubTree(NodePtr& parent) const;
+	NodePtr applyRule5ToSubTree(NodePtr& parent) const;
+	NodePtr applyRule6ToSubTree(NodePtr& parent) const;
 
 	bool subTreeIsUnknownWithNumber(const NodePtr& node) const;
 	bool nodeHasUnknownExpr(const NodePtr& ptr) const;

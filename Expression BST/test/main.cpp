@@ -75,74 +75,71 @@ void operatorTest() {
 }
 
 void ebstTest() {
-    // try {
-    //     const auto tree = EBST("(x^2 + (-10.123450 * 660000) + x % 100)");
-    // } catch (const ExpressionTreeException& ex) {
-    //     std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-    //     assert(false);
-    // }
-
-    // try {
-    //     const auto tree = EBST("x^2 - 4 * x + 7 + x");
-    // } catch (const ExpressionTreeException& ex) {
-    //     std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-    //     assert(false);
-    // }
-
-    // try {
-    //     const auto tree = EBST("x^2 + (x * x) - (x - x) / (x / x)");
-    //     std::cout << tree.toString(EBST::OutputType::Infix) << std::endl;
-    //     std::cout << tree.toString(EBST::OutputType::InfixWithParentheses) << std::endl;
-    //     std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
-    // } catch (const ExpressionTreeException& ex) {
-    //     std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-    //     assert(false);
-    // }
-
     try {
-		// const auto tree = EBST("x * (x - 10) * (x + 5)");
-		EBST("x * (x - 10) * (x + 5)");
-		EBST("5 * (x - 10) * (x + 5)");
-		EBST("x * (x - 10) + x * (x + 2)");
-		EBST("2 * (x - 10) + 2 * (x + 2)");
-		EBST("(x - 10) + (x + (x - 2))");
-		EBST("(x - 10) + (3 + (x - 2))");
-
-        // std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
+        const auto tree = EBST("(x^2 + (-10.123450 * 660000) + x % 100)");
     } catch (const ExpressionTreeException& ex) {
         std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
         assert(false);
     }
 
-    // try {
-    //     const auto tree = EBST("x^2 - 4x + 7 + x");
-    //     assert(false && "did not caught missing operator");
-    // } catch (const ExpressionTreeException&) {}
+    try {
+        const auto tree = EBST("x^2 - 4 * x + 7 + x");
+    } catch (const ExpressionTreeException& ex) {
+        std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+        assert(false);
+    }
 
-    // try {
-    //     const auto tree = EBST("xd^2 - 4 * x + 7 + x");
-    //     assert(false && "did not caught multiple char variable");
-    // } catch (const ExpressionTreeException&) {}
+    try {
+        const auto tree = EBST("x^2 + (x * x) - (x - x) / (x / x)");
+        std::cout << tree.toString(EBST::OutputType::Infix) << std::endl;
+        std::cout << tree.toString(EBST::OutputType::InfixWithParentheses) << std::endl;
+        std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
+    } catch (const ExpressionTreeException& ex) {
+        std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+        assert(false);
+    }
 
-    // try {
-    //     const auto tree = EBST("(x + 10");
-    //     assert(false && "did not caught missing ')' bracket");
-    // } catch (const ExpressionTreeException&) {}
+    try {
+		EBST("x * (x - 10) * (x + 5)");
+		EBST("5 * (x - 10) * (x + 5)");
+		EBST("x * (x - 10) + x * (x + 2)");
+		EBST("2 * (x - 10) + 2 * (x + 2)");
+		EBST("(x - 10) - (x - (x - 2))");
+		EBST("(x - 10) - (3 + (x - 2))");
+    } catch (const ExpressionTreeException& ex) {
+        std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+        assert(false);
+    }
 
-    // try {
-    //     const auto tree = EBST("x + 10)");
-    //     assert(false && "did not caught missing '(' bracket");
-    // } catch (const ExpressionTreeException&) {}
+    try {
+        const auto tree = EBST("x^2 - 4x + 7 + x");
+        assert(false && "did not caught missing operator");
+    } catch (const ExpressionTreeException&) {}
 
-    // try {
-    //     const auto tree = EBST("10 ? 2");
-    //     assert(false && "did not caught invalid operator");
-    // } catch (const ExpressionTreeException&) {}
+    try {
+        const auto tree = EBST("xd^2 - 4 * x + 7 + x");
+        assert(false && "did not caught multiple char variable");
+    } catch (const ExpressionTreeException&) {}
 
-    // try {
-    //     const auto tree = EBST("10.312.312.312 + 543.534543.543");
-    //     assert(false && "did not caught invalid operand");
-    // } catch (const ExpressionTreeException&) {}
+    try {
+        const auto tree = EBST("(x + 10");
+        assert(false && "did not caught missing ')' bracket");
+    } catch (const ExpressionTreeException&) {}
+
+    try {
+        const auto tree = EBST("x + 10)");
+        assert(false && "did not caught missing '(' bracket");
+    } catch (const ExpressionTreeException&) {}
+
+    try {
+        const auto tree = EBST("10 ? 2");
+        assert(false && "did not caught invalid operator");
+    } catch (const ExpressionTreeException&) {}
+
+    try {
+        const auto tree = EBST("10.312.312.312 + 543.534543.543");
+        assert(false && "did not caught invalid operand");
+    } catch (const ExpressionTreeException&) {}
 
     std::cout << "Tree OK" << std::endl;
 }
