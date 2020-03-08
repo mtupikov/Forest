@@ -57,8 +57,15 @@ private:
 		NumberVar = 1 << 2, // n
 		Multiplication = 1 << 3, // *
 		AdditionSubstitution = 1 << 4, // +-
+		DivisionModulo = 1 << 5, // /%
+		Power = 1 << 6, // ^
 
 		NoRule = 1 << 10,
+
+		UnknownAndNumberMul = UnknownVar | NumberVar | Multiplication, // (x * n)
+		UnknownAndNumberAddSub = UnknownVar | NumberVar | AdditionSubstitution, // (x +- n)
+		UnknownAndNumberDivMod = UnknownVar | NumberVar | DivisionModulo, // (x /% n)
+		UnknownAndNumberPow = UnknownVar | NumberVar | Power, // (x ^ n)
 
 		UnknownAndSubtree = UnknownVar | Subtree, // (x ? A)
 		NumberAndSubtree = NumberVar | Subtree, // (n ? A)
@@ -77,8 +84,9 @@ private:
 	};
 
 	friend NodeRule operator|(NodeRule a, NodeRule b);
+	std::string toString(const NodeRule rule) const;
 
-	NodeRule validateRules(const NodeRule rule1, const NodeRule rule2, const NodeRule rule3) const;
+	NodeRule validateRules(NodeRule rule1, NodeRule rule2, NodeRule rule3) const;
 
 	bool nodeHasChildren(const NodePtr& node) const;
 
@@ -99,6 +107,12 @@ private:
 	ExpressionNode getExpressionNode(const NodePtr& ptr) const;
 	NodePtr calculateTwoNumbers(const NodePtr& node, const ExpressionNode& leftExp, const ExpressionNode& rightExp) const;
 	NodePtr evaluateOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const;
+	
+	NodePtr finalTryToSimplifySubtree(NodePtr& node) const;
+	NodePtr simplifyAddition(NodePtr& node) const;
+	NodePtr simplifySubstitution(NodePtr& node) const;
+	NodePtr simplifyDivision(NodePtr& node) const;
+	NodePtr simplifyMultiplication(NodePtr& node) const;
 
 	NodePtr applyRulesToSubTree(NodePtr& parent) const;
 	NodePtr applyRule1ToSubTree(NodePtr& parent) const;

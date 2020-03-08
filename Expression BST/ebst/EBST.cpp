@@ -56,8 +56,24 @@ EBST::NodeRule EBST::getRuleForSubtree(const NodePtr& node) const {
 	auto& right = node->m_right;
 
 	const auto nodeRule = getRuleForNode(node);
-	const auto leftRule = getRuleForSubtree(left);
-	const auto rightRule = getRuleForSubtree(right);
+	auto leftRule = getRuleForSubtree(left);
+	auto rightRule = getRuleForSubtree(right);
+
+	const std::vector<NodeRule> transformedToSubtreeRules {
+		NodeRule::UnknownAndNumberMul,
+		NodeRule::UnknownAndNumberAddSub,
+		NodeRule::UnknownAndNumberDivMod,
+		NodeRule::UnknownAndNumberPow,
+	};
+
+	const auto transform = [&transformedToSubtreeRules](NodeRule& rule) {
+		if (std::find(transformedToSubtreeRules.begin(), transformedToSubtreeRules.end(), rule) != transformedToSubtreeRules.end()) {
+			rule = NodeRule::Subtree;
+		}
+	};
+
+	transform(leftRule);
+	transform(rightRule);
 
 	const auto resultRule = validateRules(nodeRule, leftRule, rightRule);
 
@@ -85,6 +101,10 @@ EBST::NodeRule EBST::getRuleForNode(const NodePtr& node) const {
 			return NodeRule::Multiplication;
 		} else if (opType == OperatorType::Addition || opType == OperatorType::Substitution) {
 			return NodeRule::AdditionSubstitution;
+		} else if (opType == OperatorType::Division || opType == OperatorType::Modulo) {
+			return NodeRule::DivisionModulo;
+		} else if (opType == OperatorType::Power) {
+			return NodeRule::Power;
 		}
 		break;
 	}
@@ -156,7 +176,7 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
 			return evaluateSubTreeWithUnknowns(newNode);
         }
 
-		return newNode;
+		return finalTryToSimplifySubtree(newNode);
 	}
 
 	return newNode;
@@ -532,6 +552,81 @@ EBST::NodePtr EBST::evaluateOperatorAndNumber(NodePtr& node, const ExpressionNod
 	return NodePtr();
 }
 
+EBST::NodePtr EBST::finalTryToSimplifySubtree(NodePtr& node) const {
+	const auto nodeOp = node->m_keyValue.first.operatorType();
+
+	switch (nodeOp) {
+	case OperatorType::Addition: return simplifyAddition(node);
+	case OperatorType::Substitution: return simplifySubstitution(node);
+	case OperatorType::Multiplication: return simplifyMultiplication(node);
+	case OperatorType::Division:
+	case OperatorType::Modulo: return simplifyDivision(node);
+	}
+	
+	return node;
+}
+
+EBST::NodePtr EBST::simplifyAddition(NodePtr& node) const {
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto leftRule = getRuleForSubtree(left);
+	const auto rightRule = getRuleForSubtree(right);
+	const auto areEqual = leftRule == rightRule;
+
+	if (areEqual) {
+		switch (leftRule) {
+		case UnknownAndNumberMul: {
+
+		}
+		case UnknownAndNumberAddSub: {
+			
+		}
+		case UnknownAndNumberDivMod: {
+			
+		}
+		case UnknownAndNumberPow: {
+			
+		}
+		}
+	}
+
+	return node;
+}
+
+EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto leftRule = getRuleForSubtree(left);
+	const auto rightRule = getRuleForSubtree(right);
+	const auto areEqual = leftRule == rightRule;
+
+	return node;
+}
+
+EBST::NodePtr EBST::simplifyDivision(NodePtr& node) const {
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto leftRule = getRuleForSubtree(left);
+	const auto rightRule = getRuleForSubtree(right);
+	const auto areEqual = leftRule == rightRule;
+
+	return node;
+}
+
+EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto leftRule = getRuleForSubtree(left);
+	const auto rightRule = getRuleForSubtree(right);
+	const auto areEqual = leftRule == rightRule;
+
+	return node;
+}
+
 EBST::NodePtr EBST::applyRulesToSubTree(NodePtr& parent) const {
 	const auto rule = getRuleForSubtree(parent);
 
@@ -794,7 +889,43 @@ EBST::NodeRule operator|(EBST::NodeRule a, EBST::NodeRule b) {
 	return static_cast<EBST::NodeRule>(lhsNum | rhsNum);
 }
 
-EBST::NodeRule EBST::validateRules(const NodeRule rule1, const NodeRule rule2, const NodeRule rule3) const {
+std::string EBST::toString(const NodeRule rule) const {
+	std::map<NodeRule, std::string> ruleToStringMap {
+		{ NodeRule::Subtree, "Subtree" },
+		{ NodeRule::UnknownVar, "UnknownVar" },
+		{ NodeRule::NumberVar, "NumberVar" },
+		{ NodeRule::Multiplication, "Multiplication" },
+		{ NodeRule::AdditionSubstitution, "AdditionSubstitution" },
+		{ NodeRule::DivisionModulo, "DivisionModulo" },
+		{ NodeRule::Power, "Power" },
+		{ NodeRule::NoRule, "NoRule" },
+		{ NodeRule::UnknownAndNumberMul, "UnknownAndNumberMul" },
+		{ NodeRule::UnknownAndNumberAddSub, "UnknownAndNumberAddSub" },
+		{ NodeRule::UnknownAndNumberDivMod, "UnknownAndNumberDivMod" },
+		{ NodeRule::UnknownAndNumberPow, "UnknownAndNumberPow" },
+		{ NodeRule::UnknownAndSubtree, "UnknownAndSubtree" },
+		{ NodeRule::NumberAndSubtree, "NumberAndSubtree" },
+		{ NodeRule::UnknownAndSubtreeMul, "UnknownAndSubtreeMul" },
+		{ NodeRule::UnknownAndSubtreeAddSub, "UnknownAndSubtreeAddSub" },
+		{ NodeRule::NumberAndSubtreeMul, "NumberAndSubtreeMul" },
+		{ NodeRule::NumberAndSubtreeAddSub, "NumberAndSubtreeAddSub" },
+		{ NodeRule::Rule1, "Rule1" },
+		{ NodeRule::Rule2, "Rule2" },
+		{ NodeRule::Rule3, "Rule3" },
+		{ NodeRule::Rule4, "Rule4" },
+		{ NodeRule::Rule5, "Rule5" },
+		{ NodeRule::Rule6, "Rule6" }
+	};
+
+	const auto it = ruleToStringMap.find(rule);
+	if (it != ruleToStringMap.end()) {
+		return ruleToStringMap.at(rule);
+	}
+
+	return {};
+}
+
+EBST::NodeRule EBST::validateRules(NodeRule rule1, NodeRule rule2, NodeRule rule3) const {
 	const std::vector<NodeRule> allowedRulesOr {
 		NodeRule::Subtree,
 		NodeRule::UnknownVar,
@@ -803,10 +934,17 @@ EBST::NodeRule EBST::validateRules(const NodeRule rule1, const NodeRule rule2, c
 		NodeRule::NumberAndSubtree,
 		NodeRule::Multiplication,
 		NodeRule::AdditionSubstitution,
+		NodeRule::AdditionSubstitution,
+		NodeRule::DivisionModulo,
+		NodeRule::Power,
+		NodeRule::UnknownAndNumberMul,
+		NodeRule::UnknownAndNumberAddSub,
+		NodeRule::UnknownAndNumberDivMod,
+		NodeRule::UnknownAndNumberPow,
 		NodeRule::UnknownAndSubtreeMul,
 		NodeRule::UnknownAndSubtreeAddSub,
 		NodeRule::NumberAndSubtreeMul,
-		NodeRule::NumberAndSubtreeAddSub,
+		NodeRule::NumberAndSubtreeAddSub
 	};
 
 	const std::vector<NodeRule> allowedRulesMul {
@@ -815,22 +953,18 @@ EBST::NodeRule EBST::validateRules(const NodeRule rule1, const NodeRule rule2, c
 		NodeRule::Rule3,
 		NodeRule::Rule4,
 		NodeRule::Rule5,
-		NodeRule::Rule6,
+		NodeRule::Rule6
 	};
 
 	const auto ruleMul = static_cast<NodeRule>(rule1 * rule2 * rule3);
-	const auto itMul = std::find_if(allowedRulesMul.cbegin(), allowedRulesMul.cend(), [ruleMul](const NodeRule r) {
-		return ruleMul == r;
-	});
+	const auto itMul = std::find(allowedRulesMul.cbegin(), allowedRulesMul.cend(), ruleMul);
 
 	if (itMul != allowedRulesMul.cend()) {
 		return ruleMul;
 	}
 
 	const auto ruleOr = rule1 | rule2 | rule3;
-	const auto it = std::find_if(allowedRulesOr.cbegin(), allowedRulesOr.cend(), [ruleOr](const NodeRule r) {
-		return r == ruleOr;
-	});
+	const auto it = std::find(allowedRulesOr.cbegin(), allowedRulesOr.cend(), ruleOr);
 
 	if (it != allowedRulesOr.cend()) {
 		return ruleOr;
