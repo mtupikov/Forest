@@ -111,8 +111,8 @@ private:
 	NodePtr finalTryToSimplifySubtree(NodePtr& node) const;
 	NodePtr simplifyAddition(NodePtr& node) const;
 	NodePtr simplifySubstitution(NodePtr& node) const;
-	NodePtr simplifyDivision(NodePtr& node) const;
 	NodePtr simplifyMultiplication(NodePtr& node) const;
+	NodePtr simplifyDivision(NodePtr& node) const;
 
 	NodePtr applyRulesToSubTree(NodePtr& parent) const;
 	NodePtr applyRule1ToSubTree(NodePtr& parent) const;
@@ -122,7 +122,7 @@ private:
 	NodePtr applyRule5ToSubTree(NodePtr& parent) const;
 	NodePtr applyRule6ToSubTree(NodePtr& parent) const;
 
-	bool subTreeIsUnknownWithNumber(const NodePtr& node) const;
+	bool subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const;
 	bool nodeHasUnknownExpr(const NodePtr& ptr) const;
 	NodePtr evaluateSubTreeWithUnknowns(const NodePtr& ptr) const;
 	// helpers end

@@ -151,7 +151,8 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
         newNode->m_left = reduceNode(left);
         newNode->m_right = reduceNode(right);
 
-		newNode = applyRulesToSubTree(newNode);
+
+        newNode = applyRulesToSubTree(newNode);
 
         auto leftExp = getExpressionNode(newNode->m_left);
         auto rightExp = getExpressionNode(newNode->m_right);
@@ -167,11 +168,13 @@ EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
 		const auto numberAndOperator = ((leftExprIsOperator && !rightExprIsOperator) && !rightExprIsUnknownOperand)
 		                                || ((!leftExprIsOperator && rightExprIsOperator) && !leftExprIsUnknownOperand);
 
+		const auto ok1 = outputInfix(newNode, true);
+
 		if (onlyNumbers) {
 			return calculateTwoNumbers(newNode, leftExp, rightExp);
 		} else if (numberAndOperator) {
 			const auto& num = leftExprIsOperator ? rightExp : leftExp;
-			return evaluateOperatorAndNumber(newNode, num, leftExprIsOperator);
+			newNode = evaluateOperatorAndNumber(newNode, num, leftExprIsOperator);
 		} else if (nodeHasUnknownExpr(newNode)) {
 			return evaluateSubTreeWithUnknowns(newNode);
         }
@@ -336,6 +339,7 @@ bool EBST::nodeHasUnknownExpr(const NodePtr& ptr) const {
 	const auto rightExpr = getExpressionNode(right);
 	const auto operandsUnknown = isOperandUnknown(leftExpr.operandValue()) || isOperandUnknown(rightExpr.operandValue());
 	const auto areOperators = isOperator(leftExpr) || isOperator(rightExpr);
+	
 	return operandsUnknown && !areOperators;
 }
 
@@ -559,8 +563,9 @@ EBST::NodePtr EBST::finalTryToSimplifySubtree(NodePtr& node) const {
 	case OperatorType::Addition: return simplifyAddition(node);
 	case OperatorType::Substitution: return simplifySubstitution(node);
 	case OperatorType::Multiplication: return simplifyMultiplication(node);
-	case OperatorType::Division:
-	case OperatorType::Modulo: return simplifyDivision(node);
+	case OperatorType::Modulo:
+	case OperatorType::Division: return simplifyDivision(node);
+	default: return node;
 	}
 	
 	return node;
@@ -574,20 +579,175 @@ EBST::NodePtr EBST::simplifyAddition(NodePtr& node) const {
 	const auto rightRule = getRuleForSubtree(right);
 	const auto areEqual = leftRule == rightRule;
 
+	const auto isSimpleRule = [](NodeRule rule) {
+		return rule == NodeRule::UnknownVar || rule == NodeRule::NumberVar;
+	};
+
+	const auto resetLeftRight = [&left, &right] {
+		left.reset();
+		right.reset();
+	};
+
+	const auto isOpType = [](const NodePtr& node, OperatorType type) {
+		return node->m_keyValue.first.operatorType() == type;
+	};
+
 	if (areEqual) {
+		const auto leftLeftIsUnknown = getRuleForSubtree(left->m_left) == EBST::NodeRule::UnknownVar;
+		auto& leftUnknownNode = leftLeftIsUnknown ? left->m_left : left->m_right;
+		auto& leftNumberNode = leftLeftIsUnknown ? left->m_right : left->m_left;
+		auto& leftNumberOperand = leftNumberNode->m_keyValue.first;
+
+		const auto rightLeftIsUnknown = getRuleForSubtree(right->m_left) == EBST::NodeRule::UnknownVar;
+		auto& rightNumberNode = rightLeftIsUnknown ? right->m_right : right->m_left;
+        auto& rightUnknownNode = rightLeftIsUnknown ? right->m_left : right->m_right;
+        auto& rightNumberOperand = rightNumberNode->m_keyValue.first;
+
 		switch (leftRule) {
 		case UnknownAndNumberMul: {
-
+			auto newNumberNode = allocateNode(leftNumberOperand + rightNumberOperand);
+			node->m_left = leftUnknownNode;
+			node->m_right = newNumberNode;
+			node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+			
+			return node;
 		}
 		case UnknownAndNumberAddSub: {
-			
-		}
-		case UnknownAndNumberDivMod: {
-			
+			auto leftNumber = leftNumberOperand.operandValue().value;
+			if (isOpType(left, OperatorType::Substitution) && leftLeftIsUnknown) {
+				leftNumber *= -1;
+			}
+
+			auto rightNumber = rightNumberOperand.operandValue().value;
+			if (isOpType(right, OperatorType::Substitution) && rightLeftIsUnknown) {
+				rightNumber *= -1;
+			}
+
+			const auto resNumber = leftNumber + rightNumber;
+			const auto resExpr = ExpressionNode(resNumber);
+
+			if (isOpType(left, OperatorType::Substitution) && !leftLeftIsUnknown && rightLeftIsUnknown) {
+				node->m_keyValue.first = resExpr;
+				resetLeftRight();
+				return node;
+			} else if (leftLeftIsUnknown && rightLeftIsUnknown) {
+				auto newLeftNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newLeftNode->m_left = allocateNode(ExpressionNode(2.0));
+				newLeftNode->m_right = leftUnknownNode;
+
+				node->m_left = newLeftNode;
+				node->m_right = allocateNode(resExpr);
+
+				return node;
+			} else if (isOpType(left, OperatorType::Substitution) && !leftLeftIsUnknown
+						&& isOpType(right, OperatorType::Substitution) && !rightLeftIsUnknown) {
+				auto newLeftNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newLeftNode->m_left = allocateNode(ExpressionNode(-2.0));
+				newLeftNode->m_right = leftUnknownNode;
+
+				node->m_left = newLeftNode;
+				node->m_right = allocateNode(resExpr);
+
+				return node;
+			}
+
+			break;
 		}
 		case UnknownAndNumberPow: {
-			
+			const auto leftNumber = leftNumberOperand.operandValue().value;
+			const auto rightNumber = rightNumberOperand.operandValue().value;
+
+			if (leftNumber == rightNumber && leftLeftIsUnknown && rightLeftIsUnknown) {
+				node->m_left = allocateNode(ExpressionNode(2.0));
+				node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+			}
+
+			return node;
 		}
+		case NumberAndSubtreeMul: {
+            if (subTreesAreEqual(leftUnknownNode, rightUnknownNode)) {
+                const auto resExpr = getExpressionNode(leftNumberNode) + getExpressionNode(rightNumberNode);
+                auto newNumNode = allocateNode(resExpr);
+                node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+                node->m_left = leftUnknownNode;
+                node->m_right = newNumNode;
+            }
+		    return node;
+		}
+        default: return node;
+		}
+	} else if (isSimpleRule(leftRule) || isSimpleRule(rightRule)) {
+		const auto leftIsSimple = isSimpleRule(leftRule);
+		const auto simpleRule = leftIsSimple ? leftRule : rightRule;
+		const auto simpleRuleIsNumber = simpleRule == NodeRule::NumberVar;
+		const auto complexRule = leftIsSimple ? rightRule : leftRule;
+
+		const auto simpleNode = leftIsSimple ? left : right;
+		const auto simpleNodeNum = simpleNode->m_keyValue.first.operandValue().value;
+		const auto complexNode = leftIsSimple ? right : left;
+		const auto complexLeftIsUnknown = getRuleForNode(complexNode->m_left) == NodeRule::UnknownVar;
+		const auto complexNumNode = complexLeftIsUnknown ? complexNode->m_right : complexNode->m_left;
+		const auto complexUnkNode = complexLeftIsUnknown ? complexNode->m_left : complexNode->m_right;
+		const auto complexNodeNum = complexNumNode->m_keyValue.first.operandValue().value;
+		const auto complexOpIsAdd = complexNode->m_keyValue.first.operatorType() == OperatorType::Addition;
+
+		switch (complexRule) {
+		case UnknownAndNumberAddSub: {
+			if (simpleRuleIsNumber) {
+				double resNum;
+				if (!complexOpIsAdd && complexLeftIsUnknown) {
+					resNum = simpleNodeNum - complexNodeNum;
+				} else {
+					resNum = complexNodeNum + simpleNodeNum;
+				}
+
+				if (resNum == 0.0) {
+					node = complexUnkNode;
+					return node;
+				}
+
+				const auto newNumNode = allocateNode(ExpressionNode(resNum));
+				node->m_left = complexUnkNode;
+				node->m_right = newNumNode;
+
+				return node;
+			} else {
+				if (!complexOpIsAdd && !complexLeftIsUnknown) {
+					node->m_keyValue.first = ExpressionNode(complexNodeNum);
+					resetLeftRight();
+
+					return node;
+				} else {
+					auto newNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+					newNode->m_left = allocateNode(ExpressionNode(2.0));
+					newNode->m_right = complexUnkNode;
+
+					node->m_left = newNode;
+					node->m_right = complexNumNode;
+
+					return node;
+				}
+			}
+		}
+		case UnknownAndNumberMul: {
+			if (!simpleRuleIsNumber) {
+				const auto newNum = complexNodeNum + 1;
+				node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+				node->m_left = complexUnkNode;
+				node->m_right = allocateNode(ExpressionNode(newNum));
+
+				return node;
+			}
+		}
+		case UnknownAndNumberDivMod:
+		case UnknownAndNumberPow: {
+			if (simpleNodeNum == 0.0) {
+				node = complexNode;
+
+				return node;
+			}
+		}
+		default: return node;
 		}
 	}
 
@@ -602,16 +762,177 @@ EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
 	const auto rightRule = getRuleForSubtree(right);
 	const auto areEqual = leftRule == rightRule;
 
-	return node;
-}
+	const auto isSimpleRule = [](NodeRule rule) {
+		return rule == NodeRule::UnknownVar || rule == NodeRule::NumberVar;
+	};
 
-EBST::NodePtr EBST::simplifyDivision(NodePtr& node) const {
-	auto& left = node->m_left;
-	auto& right = node->m_right;
+	const auto resetLeftRight = [&left, &right] {
+		left.reset();
+		right.reset();
+	};
 
-	const auto leftRule = getRuleForSubtree(left);
-	const auto rightRule = getRuleForSubtree(right);
-	const auto areEqual = leftRule == rightRule;
+	const auto isOpType = [](const NodePtr& node, OperatorType type) {
+		return node->m_keyValue.first.operatorType() == type;
+	};
+
+	if (areEqual) {
+		const auto leftLeftIsUnknown = getRuleForSubtree(left->m_left) == EBST::NodeRule::UnknownVar;
+		auto& leftUnknownNode = leftLeftIsUnknown ? left->m_left : left->m_right;
+		auto& leftNumberNode = leftLeftIsUnknown ? left->m_right : left->m_left;
+		auto& leftNumberOperand = leftNumberNode->m_keyValue.first;
+
+		const auto rightLeftIsUnknown = getRuleForSubtree(right->m_left) == EBST::NodeRule::UnknownVar;
+		auto& rightNumberNode = rightLeftIsUnknown ? right->m_right : right->m_left;
+		auto& rightNumberOperand = rightNumberNode->m_keyValue.first;
+        auto& rightUnknownNode = rightLeftIsUnknown ? right->m_left : right->m_right;
+
+		switch (leftRule) {
+		case UnknownAndNumberMul: {
+			auto newNumberNode = allocateNode(leftNumberOperand - rightNumberOperand);
+			node->m_left = leftUnknownNode;
+			node->m_right = newNumberNode;
+			node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+			
+			return node;
+		}
+		case UnknownAndNumberAddSub: {
+			auto leftNumber = leftNumberOperand.operandValue().value;
+			if (isOpType(left, OperatorType::Substitution) && leftLeftIsUnknown) {
+				leftNumber *= -1;
+			}
+
+			auto rightNumber = rightNumberOperand.operandValue().value;
+			if (isOpType(right, OperatorType::Substitution) && rightLeftIsUnknown) {
+				rightNumber *= -1;
+			}
+
+			const auto resNumber = leftNumber - rightNumber;
+			const auto resExpr = ExpressionNode(resNumber);
+
+			if ((isOpType(left, OperatorType::Addition) && !leftLeftIsUnknown && rightLeftIsUnknown)
+				|| (leftLeftIsUnknown && rightLeftIsUnknown)) {
+				node->m_keyValue.first = resExpr;
+				resetLeftRight();
+				return node;
+			} else if (leftLeftIsUnknown && isOpType(right, OperatorType::Substitution) && !rightLeftIsUnknown) {
+				auto newLeftNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newLeftNode->m_left = allocateNode(ExpressionNode(2.0));
+				newLeftNode->m_right = leftUnknownNode;
+
+				node->m_left = newLeftNode;
+				node->m_right = allocateNode(resExpr);
+
+				return node;
+			} else if (isOpType(left, OperatorType::Substitution) && !leftLeftIsUnknown && rightLeftIsUnknown) {
+				auto newLeftNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newLeftNode->m_left = allocateNode(ExpressionNode(-2.0));
+				newLeftNode->m_right = leftUnknownNode;
+
+				node->m_left = newLeftNode;
+				node->m_right = allocateNode(resExpr);
+
+				return node;
+			}
+
+			break;
+		}
+		case UnknownAndNumberPow: {
+			const auto leftNumber = leftNumberOperand.operandValue().value;
+			const auto rightNumber = rightNumberOperand.operandValue().value;
+
+			if (leftNumber == rightNumber && leftLeftIsUnknown && rightLeftIsUnknown) {
+				node->m_keyValue.first = ExpressionNode(0.0);
+				resetLeftRight();
+			}
+
+			return node;
+		}
+        case NumberAndSubtreeMul: {
+            if (subTreesAreEqual(leftUnknownNode, rightUnknownNode)) {
+                const auto resExpr = getExpressionNode(leftNumberNode) - getExpressionNode(rightNumberNode);
+                auto newNumNode = allocateNode(resExpr);
+                node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+                node->m_left = leftUnknownNode;
+                node->m_right = newNumNode;
+            }
+            return node;
+        }
+		default: return node;
+		}
+	} else if (isSimpleRule(leftRule) || isSimpleRule(rightRule)) {
+		const auto leftIsSimple = isSimpleRule(leftRule);
+		const auto simpleRule = leftIsSimple ? leftRule : rightRule;
+		const auto simpleRuleIsNumber = simpleRule == NodeRule::NumberVar;
+		const auto complexRule = leftIsSimple ? rightRule : leftRule;
+
+		const auto simpleNode = leftIsSimple ? left : right;
+		const auto simpleNodeNum = simpleNode->m_keyValue.first.operandValue().value;
+		const auto complexNode = leftIsSimple ? right : left;
+		const auto complexLeftIsUnknown = getRuleForNode(complexNode->m_left) == NodeRule::UnknownVar;
+		const auto complexNumNode = complexLeftIsUnknown ? complexNode->m_right : complexNode->m_left;
+		const auto complexUnkNode = complexLeftIsUnknown ? complexNode->m_left : complexNode->m_right;
+		const auto complexNodeNum = complexNumNode->m_keyValue.first.operandValue().value;
+		const auto complexOpIsAdd = complexNode->m_keyValue.first.operatorType() == OperatorType::Addition;
+
+		switch (complexRule) {
+		case UnknownAndNumberAddSub: {
+			if (simpleRuleIsNumber) {
+				double resNum;
+				if (!complexOpIsAdd) {
+					resNum = -1 * complexNodeNum - simpleNodeNum;
+				} else {
+					resNum = complexNodeNum - simpleNodeNum;
+				}
+
+				if (resNum == 0.0) {
+					node = complexUnkNode;
+					return node;
+				}
+
+				const auto newNumNode = allocateNode(ExpressionNode(resNum));
+				node->m_left = complexUnkNode;
+				node->m_right = newNumNode;
+
+				return node;
+			} else {
+				if (complexOpIsAdd && !complexLeftIsUnknown) {
+					node->m_keyValue.first = ExpressionNode(complexNodeNum);
+					resetLeftRight();
+
+					return node;
+				} else {
+					auto newNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+					newNode->m_left = allocateNode(ExpressionNode(-2.0));
+					newNode->m_right = complexUnkNode;
+
+					node->m_left = newNode;
+					node->m_right = complexNumNode;
+
+					return node;
+				}
+			}
+		}
+		case UnknownAndNumberMul: {
+			if (!simpleRuleIsNumber) {
+				const auto newNum = complexNodeNum - 1;
+				node->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+				node->m_left = complexUnkNode;
+				node->m_right = allocateNode(ExpressionNode(newNum));
+
+				return node;
+			}
+		}
+		case UnknownAndNumberDivMod:
+		case UnknownAndNumberPow: {
+			if (simpleNodeNum == 0.0) {
+				node = complexNode;
+
+				return node;
+			}
+		}
+		default: return node;
+		}
+	}
 
 	return node;
 }
@@ -623,6 +944,118 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 	const auto leftRule = getRuleForSubtree(left);
 	const auto rightRule = getRuleForSubtree(right);
 	const auto areEqual = leftRule == rightRule;
+
+	const auto isSimpleRule = [](NodeRule rule) {
+		return rule == NodeRule::UnknownVar || rule == NodeRule::NumberVar;
+	};
+
+	if (isSimpleRule(leftRule) || isSimpleRule(rightRule)) {
+		const auto leftIsSimple = isSimpleRule(leftRule);
+		const auto simpleRule = leftIsSimple ? leftRule : rightRule;
+		const auto simpleRuleIsNumber = simpleRule == NodeRule::NumberVar;
+		const auto complexRule = leftIsSimple ? rightRule : leftRule;
+
+		const auto simpleNode = leftIsSimple ? left : right;
+		const auto simpleNodeNum = simpleNode->m_keyValue.first.operandValue().value;
+		const auto complexNode = leftIsSimple ? right : left;
+		const auto complexLeftIsUnknown = getRuleForNode(complexNode->m_left) == NodeRule::UnknownVar;
+		const auto complexNumNode = complexLeftIsUnknown ? complexNode->m_right : complexNode->m_left;
+		const auto complexUnkNode = complexLeftIsUnknown ? complexNode->m_left : complexNode->m_right;
+		const auto complexNodeNum = complexNumNode->m_keyValue.first.operandValue().value;
+
+		if (simpleRuleIsNumber && simpleNodeNum == 0.0) {
+			return allocateNode(ExpressionNode(0.0));
+		}
+
+		switch (complexRule) {
+		case UnknownAndNumberAddSub: {
+			if (simpleRuleIsNumber) {
+				node = complexNode;
+
+				auto newUnknNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newUnknNode->m_left = complexUnkNode;
+				newUnknNode->m_right = allocateNode(ExpressionNode(simpleNodeNum));
+
+				auto newNumNode = allocateNode(ExpressionNode(simpleNodeNum * complexNodeNum));
+
+				node->m_left = newUnknNode;
+				node->m_right = newNumNode;
+
+				return node;
+			} else {
+				node = complexNode;
+
+				auto newUnknPowNode = allocateNode(ExpressionNode(OperatorType::Power));
+				newUnknPowNode->m_left = complexUnkNode;
+				newUnknPowNode->m_right = allocateNode(ExpressionNode(2.0));
+
+				auto newUnknNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newUnknNode->m_left = allocateNode(ExpressionNode(complexUnkNode->m_keyValue.first.operandValue().variableName));
+				newUnknNode->m_right = allocateNode(ExpressionNode(simpleNodeNum));
+
+				node->m_left = newUnknPowNode;
+				node->m_right = newUnknNode;
+
+				return node;
+			}
+		}
+		case UnknownAndNumberMul: {
+			if (simpleRuleIsNumber) {
+				node = complexNode;
+				complexNumNode->m_keyValue.first = ExpressionNode(simpleNodeNum * complexNodeNum);
+
+				return node;
+			} else {
+				node = complexNode;
+
+				auto newUnknPowNode = allocateNode(ExpressionNode(OperatorType::Power));
+				newUnknPowNode->m_left = complexUnkNode;
+				newUnknPowNode->m_right = allocateNode(ExpressionNode(2.0));
+
+				node->m_left = newUnknPowNode;
+				node->m_right = complexNumNode;
+
+				return node;
+			}
+		}
+		case UnknownAndNumberPow: {
+			if (!simpleRuleIsNumber) {
+				node = complexNode;
+				complexNumNode->m_keyValue.first = ExpressionNode(complexNodeNum + 1);
+
+				return node;
+			}
+		}
+		default: return node;
+		}
+	}
+
+	return node;
+}
+
+EBST::NodePtr EBST::simplifyDivision(NodePtr& node) const {
+	auto& left = node->m_left;
+	auto& right = node->m_right;
+
+	const auto leftRule = getRuleForSubtree(left);
+	const auto rightRule = getRuleForSubtree(right);
+
+	const auto isSimpleRule = [](NodeRule rule) {
+		return rule == NodeRule::UnknownVar || rule == NodeRule::NumberVar;
+	};
+
+	if (isSimpleRule(leftRule) || isSimpleRule(rightRule)) {
+		const auto leftIsSimple = isSimpleRule(leftRule);
+		const auto simpleRule = leftIsSimple ? leftRule : rightRule;
+		const auto simpleRuleIsNumber = simpleRule == NodeRule::NumberVar;
+
+		const auto simpleNode = leftIsSimple ? left : right;
+		const auto simpleNodeNum = simpleNode->m_keyValue.first.operandValue().value;
+
+		if (!leftIsSimple && simpleRuleIsNumber && simpleNodeNum == 0.0) {
+			throw ExpressionTreeException("Division by zero", 0);
+		}
+	}
 
 	return node;
 }
@@ -723,9 +1156,6 @@ EBST::NodePtr EBST::applyRule4ToSubTree(NodePtr& parent) const {
 
 	// ((n * A) +- (n * B)) -> (n * (A +- B))
 
-	const auto parentOp = parent->m_keyValue.first;
-	parent->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
-	
 	const auto leftLeftIsNumber = getRuleForSubtree(left->m_left) == EBST::NodeRule::NumberVar;
 	auto& leftNumberNode = leftLeftIsNumber ? left->m_left : left->m_right;
 	auto& leftSubtreeNode = leftLeftIsNumber ? left->m_right : left->m_left;
@@ -736,11 +1166,15 @@ EBST::NodePtr EBST::applyRule4ToSubTree(NodePtr& parent) const {
 
 	const auto firstNum = leftNumberNode->m_keyValue.first.operandValue().value;
 	const auto secondNum = rightNumberNode->m_keyValue.first.operandValue().value;
+
 	if (firstNum != secondNum) {
 		return parent;
 	}
 
-	auto newRightNode = allocateNode(parentOp);
+    const auto parentOp = parent->m_keyValue.first;
+    parent->m_keyValue.first = ExpressionNode(OperatorType::Multiplication);
+
+    auto newRightNode = allocateNode(parentOp);
 	newRightNode->m_left = leftSubtreeNode;
 	newRightNode->m_right = rightSubtreeNode;
 
@@ -810,23 +1244,25 @@ EBST::NodePtr EBST::applyRule6ToSubTree(NodePtr& parent) const {
 	return parent;
 }
 
-bool EBST::subTreeIsUnknownWithNumber(const NodePtr& node) const {
-	auto& left = node->m_left;
-	auto& right = node->m_right;
+bool EBST::subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const {
+    if (!n1 || !n2 || !n1->m_left || !n2->m_left || !n1->m_right || !n2->m_right) {
+        return false;
+    }
 
-	if (!nodeHasChildren(node)) {
-		return false;
-	}
+	const auto getExpr = [](const NodePtr& ptr) {
+	    return ptr->m_keyValue.first;
+	};
 
-	auto leftExp = getExpressionNode(left);
-	auto rightExp = getExpressionNode(right);
+	const auto parent1Expr = getExpr(n1);
+    const auto parent2Expr = getExpr(n2);
 
-	const auto leftExprIsOperator = isOperator(leftExp);
-	const auto leftExprIsUnknownOperand = !leftExprIsOperator && isOperandUnknown(leftExp.operandValue());
-	const auto rightExprIsOperator = isOperator(rightExp);
-	const auto rightExprIsUnknownOperand = !rightExprIsOperator && isOperandUnknown(rightExp.operandValue());
+    const auto left1Expr = getExpr(n1->m_left);
+    const auto left2Expr = getExpr(n2->m_left);
 
-	return leftExprIsUnknownOperand ^ rightExprIsUnknownOperand;
+    const auto right1Expr = getExpr(n1->m_right);
+    const auto right2Expr = getExpr(n2->m_right);
+
+    return parent1Expr == parent2Expr && left1Expr == left2Expr && right1Expr == right2Expr;
 }
 
 std::string EBST::outputInfix(const NodePtr& ptr, bool withBrackets) const {

@@ -76,6 +76,24 @@ bool ExpressionNode::operator>=(const ExpressionNode& rhs) const {
     return !(*this < rhs);
 }
 
+bool ExpressionNode::operator==(const ExpressionNode& rhs) const {
+    if (m_type != rhs.m_type) {
+        return false;
+    }
+
+    if (m_type == ExpressionType::Operator) {
+        return operatorType() == rhs.operatorType();
+    }
+
+    if (isOperandUnknown(operandValue()) && isOperandUnknown(rhs.operandValue())) {
+        return operandValue().variableName == rhs.operandValue().variableName;
+    } else if (!isOperandUnknown(operandValue()) && !isOperandUnknown(rhs.operandValue())) {
+        return operandValue().value == rhs.operandValue().value;
+    }
+
+    return false;
+}
+
 std::ostream& operator<<(std::ostream& os, const ExpressionNode& node) {
     os << node.toString();
     return os;
