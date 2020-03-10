@@ -51,6 +51,11 @@ private:
 	};
 	using NodePtr = typename Node::Ptr;
 
+	struct SubtreeWithOperator {
+		NodePtr subtree;
+		OperatorType op;
+	};
+
 	enum NodeRule {
 		Subtree = 1 << 0, // A
 		UnknownVar = 1 << 1, // x
@@ -99,8 +104,12 @@ private:
 
     void buildTree(const std::vector<ExpressionNode>& expressionString);
     void buildReducedFormTree();
-    NodePtr reduceNode(const NodePtr& parent);
-    std::vector<ExpressionNode> parseExpression(const std::string& expressionString) const;
+	void buildBalancedTree();
+	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
+
+	NodePtr reduceNode(const NodePtr& parent);
+
+	std::vector<ExpressionNode> parseExpression(const std::string& expressionString) const;
 
 	// helpers
 	NodePtr allocateNode(const ExpressionNode& node) const;
@@ -125,9 +134,16 @@ private:
 	bool subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const;
 	bool nodeHasUnknownExpr(const NodePtr& ptr) const;
 	NodePtr evaluateSubTreeWithUnknowns(const NodePtr& ptr) const;
+
+	int getMaximumPowerOfSubtree(const NodePtr& node) const;
+
+	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type);
 	// helpers end
 
+	NodePtr m_balancedTreeRootNode;
     NodePtr m_reducedTreeRootNode;
+
+	std::map<int, std::vector<SubtreeWithOperator>> m_degreeSubtrees;
 
 	// unused stuff
     void insert(const ExpressionNode& key, const bool&) override;

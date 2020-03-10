@@ -23,6 +23,7 @@ int ExpressionTreeException::column() const {
 EBST::EBST(const std::string& expressionString) {
     auto parsedExp = parseExpression(expressionString);
     buildTree(parsedExp);
+	buildBalancedTree();
     buildReducedFormTree();
 }
 
@@ -139,10 +140,63 @@ void EBST::buildTree(const std::vector<ExpressionNode>& expr) {
 }
 
 void EBST::buildReducedFormTree() {
-    m_reducedTreeRootNode = reduceNode(m_rootNode);
+	m_reducedTreeRootNode = reduceNode(m_rootNode);
 }
 
-EBST::NodePtr EBST::reduceNode(const EBST::NodePtr &parent) {
+void EBST::buildBalancedTree() {
+	distributeSubtrees(m_rootNode, OperatorType::Invalid, false);
+
+	for (const auto& pair : m_degreeSubtrees) {
+		std::cout << "Degree: " << pair.first << std::endl;
+		for (const auto& node : pair.second) {
+			std::cout << ExpressionNode(node.op) << " expr: " << outputInfix(node.subtree, true) << std::endl;
+		}
+	}
+}
+
+void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft) {
+	auto left = node->m_left;
+	auto right = node->m_right;
+
+	auto isAddSubOperator = [](const NodePtr& ptr) {
+		const auto expr = ptr->m_keyValue.first;
+
+		if (!isOperator(expr)) {
+			return false;
+		}
+
+		const auto opType = expr.operatorType();
+		return opType == OperatorType::Substitution || opType == OperatorType::Addition;
+	};
+
+	if (left && right) {
+		const auto nodeIsAddSub = isAddSubOperator(node);
+
+		if (!nodeIsAddSub) {
+			const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
+
+			const auto subtreePower = getMaximumPowerOfSubtree(node);
+			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedIfLeftOp);
+			return;
+		}
+
+		const auto nodeOp = node->m_keyValue.first.operatorType();
+
+		distributeSubtrees(left, nodeOp, true);
+		distributeSubtrees(right, nodeOp, false);
+		return;
+	}
+
+	if (isOperator(node->m_keyValue.first)) {
+		return;
+	}
+
+	const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
+	const auto isUnknown = isOperandUnknown(node->m_keyValue.first.operandValue());
+	insertNodeIntoDegreeSubtreesMap(node, isUnknown ? 1 : 0, resolvedIfLeftOp);
+}
+
+EBST::NodePtr EBST::reduceNode(const NodePtr &parent) {
     auto newNode = allocateNode(parent->m_keyValue.first);
 
     auto left = parent->m_left;
@@ -456,6 +510,34 @@ EBST::NodePtr EBST::evaluateSubTreeWithUnknowns(const NodePtr& ptr) const {
 	}
 
 	return ptr;
+}
+
+int EBST::getMaximumPowerOfSubtree(const EBST::NodePtr& node) const {
+	auto left = node->m_left;
+	auto right = node->m_right;
+
+	if (left && right) {
+		if (isOperator(node->m_keyValue.first) && node->m_keyValue.first.operatorType() == OperatorType::Power) {
+			return static_cast<int>(right->m_keyValue.first.operandValue().value);
+		}
+
+		const auto leftPower = getMaximumPowerOfSubtree(left);
+		const auto rightPower = getMaximumPowerOfSubtree(right);
+
+		return std::max(leftPower, rightPower);
+	}
+
+	const auto nodeIsUnknownVar = isOperandUnknown(node->m_keyValue.first.operandValue());
+	return nodeIsUnknownVar ? 1 : 0;
+}
+
+void EBST::insertNodeIntoDegreeSubtreesMap(const NodePtr& node, int power, OperatorType type) {
+	if (m_degreeSubtrees.count(power) == 0) {
+		m_degreeSubtrees[power] = {};
+	}
+
+	auto& degreeVec = m_degreeSubtrees[power];
+	degreeVec.push_back({ node, type });
 }
 
 EBST::NodePtr EBST::allocateNode(const ExpressionNode& node) const {

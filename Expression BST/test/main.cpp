@@ -90,7 +90,7 @@ void ebstTest() {
     // }
 
     try {
-        const auto tree = EBST("4 * x ^ 2 - 10 * x + 6 * x ^ 2 ");
+		const auto tree = EBST("4 * x ^ 2 - 10 * x + 6 * x ^ 2 - 6 + 10 + x * 2 - x ^ 2 + x ^ 3 - x + x * (x - 10 * (x - 10))");
         std::cout << tree.toString(EBST::OutputType::Infix) << std::endl;
         std::cout << tree.toString(EBST::OutputType::InfixWithParentheses) << std::endl;
         std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
