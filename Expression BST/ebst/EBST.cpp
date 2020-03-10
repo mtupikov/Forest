@@ -175,6 +175,12 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 		if (!nodeIsAddSub) {
 			const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
 
+//			if (countUnknownVars(node) > 1) {
+//				auto reducedNode = reduceNode(node);
+//				distributeSubtrees(reducedNode, parentOp, isLeft);
+//				return;
+//			}
+
 			const auto subtreePower = getMaximumPowerOfSubtree(node);
 			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedIfLeftOp);
 			return;
@@ -193,6 +199,11 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 
 	const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
 	const auto isUnknown = isOperandUnknown(node->m_keyValue.first.operandValue());
+
+	if (!isUnknown && node->m_keyValue.first.operandValue().value == 0.0) {
+		return;
+	}
+
 	insertNodeIntoDegreeSubtreesMap(node, isUnknown ? 1 : 0, resolvedIfLeftOp);
 }
 
@@ -525,6 +536,21 @@ int EBST::getMaximumPowerOfSubtree(const EBST::NodePtr& node) const {
 		const auto rightPower = getMaximumPowerOfSubtree(right);
 
 		return std::max(leftPower, rightPower);
+	}
+
+	const auto nodeIsUnknownVar = isOperandUnknown(node->m_keyValue.first.operandValue());
+	return nodeIsUnknownVar ? 1 : 0;
+}
+
+int EBST::countUnknownVars(const NodePtr& node) const {
+	auto left = node->m_left;
+	auto right = node->m_right;
+
+	if (left && right) {
+		const auto leftCount = countUnknownVars(left);
+		const auto rightCount = countUnknownVars(right);
+
+		return leftCount + rightCount;
 	}
 
 	const auto nodeIsUnknownVar = isOperandUnknown(node->m_keyValue.first.operandValue());
@@ -1074,7 +1100,7 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 
 			auto newUnknNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
 			newUnknNode->m_left = allocateNode(ExpressionNode(complexUnkNode->m_keyValue.first.operandValue().variableName));
-			newUnknNode->m_right = allocateNode(ExpressionNode(simpleNodeNum));
+			newUnknNode->m_right = allocateNode(ExpressionNode(complexNodeNum));
 
 			node->m_left = newUnknPowNode;
 			node->m_right = newUnknNode;
@@ -1108,6 +1134,10 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 				return node;
 			}
 			break;
+		}
+		case NumberAndSubtreeMul: {
+			// TODO
+			return node;
 		}
 		default: return node;
 		}

@@ -136,6 +136,7 @@ private:
 	NodePtr evaluateSubTreeWithUnknowns(const NodePtr& ptr) const;
 
 	int getMaximumPowerOfSubtree(const NodePtr& node) const;
+	int countUnknownVars(const NodePtr& node) const;
 
 	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type);
 	// helpers end
