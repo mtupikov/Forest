@@ -567,8 +567,6 @@ EBST::NodePtr EBST::finalTryToSimplifySubtree(NodePtr& node) const {
 	case OperatorType::Division: return simplifyDivision(node);
 	default: return node;
 	}
-	
-	return node;
 }
 
 EBST::NodePtr EBST::simplifyAddition(NodePtr& node) const {
@@ -746,6 +744,7 @@ EBST::NodePtr EBST::simplifyAddition(NodePtr& node) const {
 
 				return node;
 			}
+			break;
 		}
 		default: return node;
 		}
@@ -894,22 +893,22 @@ EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
 				node->m_right = newNumNode;
 
 				return node;
+			}
+
+			if (complexOpIsAdd && !complexLeftIsUnknown) {
+				node->m_keyValue.first = ExpressionNode(complexNodeNum);
+				resetLeftRight();
+
+				return node;
 			} else {
-				if (complexOpIsAdd && !complexLeftIsUnknown) {
-					node->m_keyValue.first = ExpressionNode(complexNodeNum);
-					resetLeftRight();
+				auto newNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+				newNode->m_left = allocateNode(ExpressionNode(-2.0));
+				newNode->m_right = complexUnkNode;
 
-					return node;
-				} else {
-					auto newNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
-					newNode->m_left = allocateNode(ExpressionNode(-2.0));
-					newNode->m_right = complexUnkNode;
+				node->m_left = newNode;
+				node->m_right = complexNumNode;
 
-					node->m_left = newNode;
-					node->m_right = complexNumNode;
-
-					return node;
-				}
+				return node;
 			}
 		}
 		case UnknownAndNumberMul: {
@@ -921,6 +920,7 @@ EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
 
 				return node;
 			}
+			break;
 		}
 		case UnknownAndNumberDivMod:
 		case UnknownAndNumberPow: {
@@ -929,6 +929,7 @@ EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
 
 				return node;
 			}
+			break;
 		}
 		default: return node;
 		}
@@ -943,7 +944,6 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 
 	const auto leftRule = getRuleForSubtree(left);
 	const auto rightRule = getRuleForSubtree(right);
-	const auto areEqual = leftRule == rightRule;
 
 	const auto isSimpleRule = [](NodeRule rule) {
 		return rule == NodeRule::UnknownVar || rule == NodeRule::NumberVar;
@@ -982,22 +982,22 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 				node->m_right = newNumNode;
 
 				return node;
-			} else {
-				node = complexNode;
-
-				auto newUnknPowNode = allocateNode(ExpressionNode(OperatorType::Power));
-				newUnknPowNode->m_left = complexUnkNode;
-				newUnknPowNode->m_right = allocateNode(ExpressionNode(2.0));
-
-				auto newUnknNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
-				newUnknNode->m_left = allocateNode(ExpressionNode(complexUnkNode->m_keyValue.first.operandValue().variableName));
-				newUnknNode->m_right = allocateNode(ExpressionNode(simpleNodeNum));
-
-				node->m_left = newUnknPowNode;
-				node->m_right = newUnknNode;
-
-				return node;
 			}
+
+			node = complexNode;
+
+			auto newUnknPowNode = allocateNode(ExpressionNode(OperatorType::Power));
+			newUnknPowNode->m_left = complexUnkNode;
+			newUnknPowNode->m_right = allocateNode(ExpressionNode(2.0));
+
+			auto newUnknNode = allocateNode(ExpressionNode(OperatorType::Multiplication));
+			newUnknNode->m_left = allocateNode(ExpressionNode(complexUnkNode->m_keyValue.first.operandValue().variableName));
+			newUnknNode->m_right = allocateNode(ExpressionNode(simpleNodeNum));
+
+			node->m_left = newUnknPowNode;
+			node->m_right = newUnknNode;
+
+			return node;
 		}
 		case UnknownAndNumberMul: {
 			if (simpleRuleIsNumber) {
@@ -1005,18 +1005,18 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 				complexNumNode->m_keyValue.first = ExpressionNode(simpleNodeNum * complexNodeNum);
 
 				return node;
-			} else {
-				node = complexNode;
-
-				auto newUnknPowNode = allocateNode(ExpressionNode(OperatorType::Power));
-				newUnknPowNode->m_left = complexUnkNode;
-				newUnknPowNode->m_right = allocateNode(ExpressionNode(2.0));
-
-				node->m_left = newUnknPowNode;
-				node->m_right = complexNumNode;
-
-				return node;
 			}
+
+			node = complexNode;
+
+			auto newUnknPowNode = allocateNode(ExpressionNode(OperatorType::Power));
+			newUnknPowNode->m_left = complexUnkNode;
+			newUnknPowNode->m_right = allocateNode(ExpressionNode(2.0));
+
+			node->m_left = newUnknPowNode;
+			node->m_right = complexNumNode;
+
+			return node;
 		}
 		case UnknownAndNumberPow: {
 			if (!simpleRuleIsNumber) {
@@ -1025,6 +1025,7 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 
 				return node;
 			}
+			break;
 		}
 		default: return node;
 		}
@@ -1072,8 +1073,6 @@ EBST::NodePtr EBST::applyRulesToSubTree(NodePtr& parent) const {
 	case NodeRule::Rule6: return applyRule6ToSubTree(parent);
 	default: return parent;
 	}
-
-	return parent;
 }
 
 EBST::NodePtr EBST::applyRule1ToSubTree(NodePtr& parent) const {
