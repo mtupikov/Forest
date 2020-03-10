@@ -23,7 +23,7 @@ private:
     int m_column;
 };
 
-class EBST : public AbstractBST<ExpressionNode, bool> {
+class EBST final : public AbstractBST<ExpressionNode, bool> {
 public:
 	using AbstractBaseTree = AbstractBST<ExpressionNode, bool>;
 	using AbstractBaseTree::find;
@@ -91,38 +91,35 @@ private:
 	friend NodeRule operator|(NodeRule a, NodeRule b);
 	std::string toString(const NodeRule rule) const;
 
-	NodeRule validateRules(NodeRule rule1, NodeRule rule2, NodeRule rule3) const;
-
-	bool nodeHasChildren(const NodePtr& node) const;
-
-	NodeRule getRuleForSubtree(const NodePtr& node) const;
-	NodeRule getRuleForNode(const NodePtr& node) const;
-
-    std::string outputInfix(const NodePtr& ptr, bool withBrackets) const;
-    std::string outputPostfix(const NodePtr& ptr) const;
-    std::string outputPrefix(const NodePtr& ptr) const;
-
-    void buildTree(const std::vector<ExpressionNode>& expressionString);
-    void buildReducedFormTree();
-	void buildBalancedTree();
-	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
-
-	NodePtr reduceNode(const NodePtr& parent);
-
 	std::vector<ExpressionNode> parseExpression(const std::string& expressionString) const;
 
-	// helpers
-	NodePtr allocateNode(const ExpressionNode& node) const;
-	ExpressionNode getExpressionNode(const NodePtr& ptr) const;
-	NodePtr calculateTwoNumbers(const NodePtr& node, const ExpressionNode& leftExp, const ExpressionNode& rightExp) const;
-	NodePtr evaluateOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const;
-	
-	NodePtr finalTryToSimplifySubtree(NodePtr& node) const;
+    void buildTree(const std::vector<ExpressionNode>& expressionString);
+
+	// NodeReduce.cpp
+	void buildReducedFormTree();
+	NodePtr reduceNode(const NodePtr& parent);
+
+	// NodeBalancing.cpp
+	void buildBalancedTree();
+	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
+	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type);
+
+	// NodeOutput.cpp
+	std::string outputInfix(const NodePtr& ptr, bool withBrackets) const;
+	std::string outputPostfix(const NodePtr& ptr) const;
+	std::string outputPrefix(const NodePtr& ptr) const;
+
+	// NodeSimplifiers.cpp
+	NodePtr simplifySubtree(NodePtr& node) const;
 	NodePtr simplifyAddition(NodePtr& node) const;
 	NodePtr simplifySubstitution(NodePtr& node) const;
 	NodePtr simplifyMultiplication(NodePtr& node) const;
 	NodePtr simplifyDivision(NodePtr& node) const;
+	NodePtr simplifyTwoNumbers(const NodePtr& node, const ExpressionNode& leftExp, const ExpressionNode& rightExp) const;
+	NodePtr simplifyOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const;
+	NodePtr simplifySubTreeWithUnknowns(const NodePtr& ptr) const;
 
+	// NodeRules.cpp
 	NodePtr applyRulesToSubTree(NodePtr& parent) const;
 	NodePtr applyRule1ToSubTree(NodePtr& parent) const;
 	NodePtr applyRule2ToSubTree(NodePtr& parent) const;
@@ -130,20 +127,22 @@ private:
 	NodePtr applyRule4ToSubTree(NodePtr& parent) const;
 	NodePtr applyRule5ToSubTree(NodePtr& parent) const;
 	NodePtr applyRule6ToSubTree(NodePtr& parent) const;
+	NodeRule getRuleForSubtree(const NodePtr& node) const;
+	NodeRule getRuleForNode(const NodePtr& node) const;
+	NodeRule validateRules(NodeRule rule1, NodeRule rule2, NodeRule rule3) const;
 
+	// NodeHelpers.cpp
+	NodePtr allocateNode(const ExpressionNode& node) const;
+	ExpressionNode getExpressionNode(const NodePtr& ptr) const;
 	bool subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const;
 	bool nodeHasUnknownExpr(const NodePtr& ptr) const;
-	NodePtr evaluateSubTreeWithUnknowns(const NodePtr& ptr) const;
-
 	int getMaximumPowerOfSubtree(const NodePtr& node) const;
 	int countUnknownVars(const NodePtr& node) const;
+	bool nodeHasChildren(const NodePtr& node) const;
 
-	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type);
-	// helpers end
-
+	// members
 	NodePtr m_balancedTreeRootNode;
     NodePtr m_reducedTreeRootNode;
-
 	std::map<int, std::vector<SubtreeWithOperator>> m_degreeSubtrees;
 
 	// unused stuff

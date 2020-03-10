@@ -1,6 +1,12 @@
 add_library(ebst STATIC
 	EBST.h
 	EBST.cpp
+	NodeHelpers.cpp
+	NodeRules.cpp
+	NodeOutput.cpp
+	NodeReduce.cpp
+	NodeBalancing.cpp
+	NodeSimplifiers.cpp
 	ExpressionNode.h
 	ExpressionNode.cpp
 )
