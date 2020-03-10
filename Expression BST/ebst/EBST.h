@@ -97,7 +97,7 @@ private:
 
 	// NodeReduce.cpp
 	void buildReducedFormTree();
-	NodePtr reduceNode(const NodePtr& parent);
+	NodePtr reduceNode(const NodePtr& parent) const;
 
 	// NodeBalancing.cpp
 	void buildBalancedTree();
@@ -120,6 +120,7 @@ private:
 	NodePtr simplifySubTreeWithUnknowns(const NodePtr& ptr) const;
 
 	// NodeRules.cpp
+	NodePtr applyRulesToTree(NodePtr& parent) const;
 	NodePtr applyRulesToSubTree(NodePtr& parent) const;
 	NodePtr applyRule1ToSubTree(NodePtr& parent) const;
 	NodePtr applyRule2ToSubTree(NodePtr& parent) const;

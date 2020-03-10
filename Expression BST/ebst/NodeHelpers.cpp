@@ -10,8 +10,8 @@ ExpressionNode EBST::getExpressionNode(const NodePtr& ptr) const {
 }
 
 bool EBST::subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const {
-	if (!n1 || !n2 || !n1->m_left || !n2->m_left || !n1->m_right || !n2->m_right) {
-		return false;
+	if ((!n1 && !n2) || (!n1->m_left && !n2->m_left) || (!n1->m_right && !n2->m_right)) {
+		return true;
 	}
 
 	const auto getExpr = [](const NodePtr& ptr) {
@@ -21,13 +21,9 @@ bool EBST::subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const {
 	const auto parent1Expr = getExpr(n1);
 	const auto parent2Expr = getExpr(n2);
 
-	const auto left1Expr = getExpr(n1->m_left);
-	const auto left2Expr = getExpr(n2->m_left);
-
-	const auto right1Expr = getExpr(n1->m_right);
-	const auto right2Expr = getExpr(n2->m_right);
-
-	return parent1Expr == parent2Expr && left1Expr == left2Expr && right1Expr == right2Expr;
+	return parent1Expr == parent2Expr
+	       && subTreesAreEqual(n1->m_left, n2->m_left)
+	       && subTreesAreEqual(n1->m_right, n2->m_right);
 }
 
 bool EBST::nodeHasUnknownExpr(const NodePtr& ptr) const {

@@ -3,12 +3,12 @@
 void EBST::buildBalancedTree() {
 	distributeSubtrees(m_rootNode, OperatorType::Invalid, false);
 
-	for (const auto& pair : m_degreeSubtrees) {
-		std::cout << "Degree: " << pair.first << std::endl;
-		for (const auto& node : pair.second) {
-			std::cout << ExpressionNode(node.op) << " expr: " << outputInfix(node.subtree, true) << std::endl;
-		}
-	}
+//	for (const auto& pair : m_degreeSubtrees) {
+//		std::cout << "Degree: " << pair.first << std::endl;
+//		for (const auto& node : pair.second) {
+//			std::cout << ExpressionNode(node.op) << " expr: " << outputInfix(node.subtree, true) << std::endl;
+//		}
+//	}
 }
 
 void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft) {
@@ -32,11 +32,21 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 		if (!nodeIsAddSub) {
 			const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
 
-//			if (countUnknownVars(node) > 1) {
-//				auto reducedNode = reduceNode(node);
-//				distributeSubtrees(reducedNode, parentOp, isLeft);
-//				return;
-//			}
+			if (countUnknownVars(node) > 1) {
+				if (countUnknownVars(left) > 1) {
+					node->m_left = reduceNode(left);
+				}
+
+				if (countUnknownVars(right) > 1) {
+					node->m_right = reduceNode(right);
+				}
+
+				auto reducedNode = reduceNode(node);
+				if (!subTreesAreEqual(node, reducedNode)) {
+					distributeSubtrees(reducedNode, parentOp, isLeft);
+					return;
+				}
+			}
 
 			const auto subtreePower = getMaximumPowerOfSubtree(node);
 			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedIfLeftOp);

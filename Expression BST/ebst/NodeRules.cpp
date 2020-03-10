@@ -1,5 +1,16 @@
 #include "EBST.h"
 
+EBST::NodePtr EBST::applyRulesToTree(NodePtr& parent) const {
+	auto newNode = applyRulesToSubTree(parent);
+
+	if (nodeHasChildren(newNode)) {
+		newNode->m_left = applyRulesToTree(newNode->m_left);
+		newNode->m_right = applyRulesToTree(newNode->m_right);
+	}
+
+	return newNode;
+}
+
 EBST::NodePtr EBST::applyRulesToSubTree(NodePtr& parent) const {
 	const auto rule = getRuleForSubtree(parent);
 

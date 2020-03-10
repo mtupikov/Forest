@@ -23,6 +23,7 @@ int ExpressionTreeException::column() const {
 EBST::EBST(const std::string& expressionString) {
     auto parsedExp = parseExpression(expressionString);
     buildTree(parsedExp);
+	m_rootNode = applyRulesToTree(m_rootNode);
 	buildBalancedTree();
     buildReducedFormTree();
 }

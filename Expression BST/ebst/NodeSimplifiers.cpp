@@ -471,10 +471,6 @@ EBST::NodePtr EBST::simplifyMultiplication(NodePtr& node) const {
 			}
 			break;
 		}
-		case NumberAndSubtreeMul: {
-			// TODO
-			return node;
-		}
 		default: return node;
 		}
 	}

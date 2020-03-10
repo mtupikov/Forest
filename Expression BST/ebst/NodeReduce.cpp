@@ -4,7 +4,7 @@ void EBST::buildReducedFormTree() {
 	m_reducedTreeRootNode = reduceNode(m_rootNode);
 }
 
-EBST::NodePtr EBST::reduceNode(const NodePtr &parent) {
+EBST::NodePtr EBST::reduceNode(const NodePtr &parent) const {
 	auto newNode = allocateNode(parent->m_keyValue.first);
 
 	auto left = parent->m_left;
@@ -12,7 +12,6 @@ EBST::NodePtr EBST::reduceNode(const NodePtr &parent) {
 	if (left && right) {
 		newNode->m_left = reduceNode(left);
 		newNode->m_right = reduceNode(right);
-
 
 		newNode = applyRulesToSubTree(newNode);
 
@@ -29,8 +28,6 @@ EBST::NodePtr EBST::reduceNode(const NodePtr &parent) {
 
 		const auto numberAndOperator = ((leftExprIsOperator && !rightExprIsOperator) && !rightExprIsUnknownOperand)
 		                                || ((!leftExprIsOperator && rightExprIsOperator) && !leftExprIsUnknownOperand);
-
-		const auto ok1 = outputInfix(newNode, true);
 
 		if (onlyNumbers) {
 			return simplifyTwoNumbers(newNode, leftExp, rightExp);
