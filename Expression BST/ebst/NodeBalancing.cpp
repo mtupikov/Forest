@@ -1,14 +1,23 @@
 #include "EBST.h"
 
-void EBST::buildBalancedTree() {
-	distributeSubtrees(m_rootNode, OperatorType::Invalid, false);
+#include <algorithm>
 
-//	for (const auto& pair : m_degreeSubtrees) {
-//		std::cout << "Degree: " << pair.first << std::endl;
-//		for (const auto& node : pair.second) {
-//			std::cout << ExpressionNode(node.op) << " expr: " << outputInfix(node.subtree, true) << std::endl;
-//		}
-//	}
+void EBST::buildBalancedTree(const NodePtr& node) {
+	distributeSubtrees(node, OperatorType::Addition, false);
+
+	std::vector<SubtreeWithOperator> rootTreeVec;
+	for (const auto& pair : m_degreeSubtrees) {
+		auto vec = pair.second;
+		std::partition(vec.begin(), vec.end(), [](const SubtreeWithOperator& s) {
+			return s.isLeft || s.op == OperatorType::Addition;
+		});
+		auto degreeTree = buildTreeFromVectorOfNodes(vec);
+
+		auto degTreeOp = vec.size() == 1 ? vec.front().op : OperatorType::Addition;
+		rootTreeVec.push_back({ reduceNode(degreeTree), degTreeOp, false });
+	}
+
+	m_balancedTreeRootNode = buildTreeFromVectorOfNodes(rootTreeVec);
 }
 
 void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft) {
@@ -49,7 +58,7 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 			}
 
 			const auto subtreePower = getMaximumPowerOfSubtree(node);
-			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedIfLeftOp);
+			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedIfLeftOp, isLeft);
 			return;
 		}
 
@@ -71,14 +80,37 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 		return;
 	}
 
-	insertNodeIntoDegreeSubtreesMap(node, isUnknown ? 1 : 0, resolvedIfLeftOp);
+	insertNodeIntoDegreeSubtreesMap(node, isUnknown ? 1 : 0, resolvedIfLeftOp, isLeft);
 }
 
-void EBST::insertNodeIntoDegreeSubtreesMap(const NodePtr& node, int power, OperatorType type) {
+void EBST::insertNodeIntoDegreeSubtreesMap(const NodePtr& node, int power, OperatorType type, bool isLeft) {
 	if (m_degreeSubtrees.count(power) == 0) {
 		m_degreeSubtrees[power] = {};
 	}
 
 	auto& degreeVec = m_degreeSubtrees[power];
-	degreeVec.push_back({ node, type });
+	degreeVec.push_back({ node, type, isLeft });
+}
+
+EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec) const {
+	NodePtr root;
+	NodePtr mostRecentParent;
+	for (auto it = vec.cbegin(); it < vec.cend();) {
+		auto next = std::next(it, 1);
+		if (next != vec.cend()) {
+			auto opNode = allocateNode(ExpressionNode(next->op));
+
+			if (!root) {
+				root = opNode;
+			}
+
+			opNode->m_left = it->subtree;
+			opNode->m_right = buildTreeFromVectorOfNodes(std::vector(next, vec.cend()));
+			return opNode;
+		}
+
+		return it->subtree;
+	}
+
+	return root;
 }

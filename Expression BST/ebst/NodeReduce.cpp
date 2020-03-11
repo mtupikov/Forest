@@ -1,7 +1,7 @@
 #include "EBST.h"
 
-void EBST::buildReducedFormTree() {
-	m_reducedTreeRootNode = reduceNode(m_rootNode);
+void EBST::buildReducedFormTree(const NodePtr& node) {
+	m_reducedTreeRootNode = reduceNode(node);
 }
 
 EBST::NodePtr EBST::reduceNode(const NodePtr &parent) const {
@@ -12,6 +12,9 @@ EBST::NodePtr EBST::reduceNode(const NodePtr &parent) const {
 	if (left && right) {
 		newNode->m_left = reduceNode(left);
 		newNode->m_right = reduceNode(right);
+
+		auto l = outputInfix(newNode->m_left, true);
+		auto r = outputInfix(newNode->m_right, true);
 
 		newNode = applyRulesToSubTree(newNode);
 

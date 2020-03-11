@@ -23,9 +23,8 @@ int ExpressionTreeException::column() const {
 EBST::EBST(const std::string& expressionString) {
     auto parsedExp = parseExpression(expressionString);
     buildTree(parsedExp);
-	m_rootNode = applyRulesToTree(m_rootNode);
-	buildBalancedTree();
-    buildReducedFormTree();
+	buildReducedFormTree(m_rootNode);
+	buildBalancedTree(m_reducedTreeRootNode);
 }
 
 std::string EBST::toString(OutputType type) const {
@@ -35,7 +34,7 @@ std::string EBST::toString(OutputType type) const {
     case OutputType::Postfix: return outputPostfix(m_rootNode);
     case OutputType::Prefix: return outputPrefix(m_rootNode);
     case OutputType::ReducedInfixWithParentheses:
-    case OutputType::ReducedInfix: return outputInfix(m_reducedTreeRootNode, type == OutputType::ReducedInfixWithParentheses);
+	case OutputType::ReducedInfix: return outputInfix(m_balancedTreeRootNode, type == OutputType::ReducedInfixWithParentheses);
     }
 
     return {};
@@ -118,7 +117,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
     };
 
 	const auto expressionNodeIsOperator = [](const std::optional<ExpressionNode>& op) {
-        return op.has_value() && op.value().type() == ExpressionType::Operator;
+		return (op.has_value() && op.value().type() == ExpressionType::Operator) || !op.has_value();
     };
 
 	const auto distanceFromBegin = [&expr](const auto& it) {

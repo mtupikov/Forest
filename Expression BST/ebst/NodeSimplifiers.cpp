@@ -291,6 +291,14 @@ EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
 			return node;
 		}
 		case NumberAndSubtreeMul: {
+			const auto leftLeftIsNumber = getRuleForSubtree(left->m_left) == EBST::NodeRule::NumberVar;
+			auto& leftUnknownNode = leftLeftIsNumber ? left->m_right : left->m_left;
+			auto& leftNumberNode = leftLeftIsNumber ? left->m_left : left->m_right;
+
+			const auto rightLeftIsNumber = getRuleForSubtree(right->m_left) == EBST::NodeRule::NumberVar;
+			auto& rightNumberNode = rightLeftIsNumber ? right->m_left : right->m_right;
+			auto& rightUnknownNode = leftLeftIsNumber ? right->m_right : right->m_left;
+
 			if (subTreesAreEqual(leftUnknownNode, rightUnknownNode)) {
 				const auto resExpr = getExpressionNode(leftNumberNode) - getExpressionNode(rightNumberNode);
 				auto newNumNode = allocateNode(resExpr);

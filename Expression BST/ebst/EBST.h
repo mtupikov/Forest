@@ -53,7 +53,8 @@ private:
 
 	struct SubtreeWithOperator {
 		NodePtr subtree;
-		OperatorType op;
+		OperatorType op = OperatorType::Invalid;
+		bool isLeft = false;
 	};
 
 	enum NodeRule {
@@ -96,13 +97,14 @@ private:
     void buildTree(const std::vector<ExpressionNode>& expressionString);
 
 	// NodeReduce.cpp
-	void buildReducedFormTree();
+	void buildReducedFormTree(const NodePtr& node);
 	NodePtr reduceNode(const NodePtr& parent) const;
 
 	// NodeBalancing.cpp
-	void buildBalancedTree();
+	void buildBalancedTree(const NodePtr& node);
 	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
-	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type);
+	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type, bool isLeft);
+	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec) const;
 
 	// NodeOutput.cpp
 	std::string outputInfix(const NodePtr& ptr, bool withBrackets) const;

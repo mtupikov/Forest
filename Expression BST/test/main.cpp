@@ -77,80 +77,37 @@ void operatorTest() {
 void ebstTest() {
 	 try {
 		 const auto tree = EBST("(x^2 + (-10.123450 * 660000) + x % 100)");
+		 std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
 	 } catch (const ExpressionTreeException& ex) {
 		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
 		 assert(false);
 	 }
 
 	 try {
-		 const auto tree = EBST("x^2 - 4 * x + 7 + x");
+		 const auto tree = EBST("-10 * x^2 - -4 * x + 7 + x");
+		 std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
 	 } catch (const ExpressionTreeException& ex) {
 		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
 		 assert(false);
 	 }
 
+	try {
+		const auto tree = EBST("(x ^ 2) * 11 - (x ^ 2) * 2");
+		std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
+	} catch (const ExpressionTreeException& ex) {
+		std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
     try {
 		const auto tree = EBST("(x + (10 * x)) * x - 20 * x + 10 * x ^ 3 - x ^ 2 * 2");
-        std::cout << tree.toString(EBST::OutputType::Infix) << std::endl;
-        std::cout << tree.toString(EBST::OutputType::InfixWithParentheses) << std::endl;
         std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
     } catch (const ExpressionTreeException& ex) {
         std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
         assert(false);
     }
 
-    // rules test start
-
-	 try {
-		 const auto tree = EBST("x * (x - 10) * (x + 5)");
-		 std::cout << "r1: " << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-		 assert(false);
-	 }
-
-	 try {
-		 const auto tree = EBST("5 * (x - 10) * (x + 5)");
-		 std::cout << "r2: " << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-		 assert(false);
-	 }
-
-	 try {
-		 const auto tree = EBST("x * (x - 10) + x * (x + 2)");
-		 std::cout << "r3: " << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-		 assert(false);
-	 }
-
-	 try {
-		 const auto tree = EBST("2 * (x - 10) + 2 * (x + 2)");
-		 std::cout << "r4: " << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-		 assert(false);
-	 }
-
-	 try {
-		 const auto tree = EBST("(x - 10) - (x - (x - 2))");
-		 std::cout << "r5: " << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-		 assert(false);
-	 }
-
-	 try {
-		 const auto tree = EBST("(x - 10) - (3 + (x - 2))");
-		 std::cout << "r6: " << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
-		 assert(false);
-	 }
-
-    // rules test finish
-
+	// invalid scenarios
     try {
         const auto tree = EBST("x^2 - 4x + 7 + x");
         assert(false && "did not caught missing operator");
