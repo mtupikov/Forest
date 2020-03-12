@@ -1,5 +1,6 @@
 #include "ExpressionNode.h"
 #include "EBST.h"
+#include "ExpressionException.h"
 
 #include <assert.h>
 #include <iostream>
@@ -77,66 +78,120 @@ void operatorTest() {
 void ebstTest() {
 	 try {
 		 const auto tree = EBST("(x^2 + (-10.123450 * 660000) + x % 100)");
-		 std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+		 assert(tree.toString(EBST::OutputType::ReducedInfix).compare("-6681477.0 + x % 100.0 + x ^ 2.0") == 0);
+	 } catch (const ExpressionException& ex) {
+		 std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		 assert(false);
 	 }
 
 	 try {
 		 const auto tree = EBST("-10 * x^2 - -4 * x + 7 + x");
-		 std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	 } catch (const ExpressionTreeException& ex) {
-		 std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+		 assert(tree.toString(EBST::OutputType::ReducedInfix).compare("7.0 + -5.0 * x + -10.0 * x ^ 2.0") == 0);
+	 } catch (const ExpressionException& ex) {
+		 std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		 assert(false);
 	 }
 
 	try {
 		const auto tree = EBST("(x ^ 2) * 11 - (x ^ 2) * 2");
-		std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-	} catch (const ExpressionTreeException& ex) {
-		std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("9.0 * x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		assert(false);
 	}
 
     try {
 		const auto tree = EBST("(x + (10 * x)) * x - 20 * x + 10 * x ^ 3 - x ^ 2 * 2");
-        std::cout << tree.toString(EBST::OutputType::ReducedInfixWithParentheses) << std::endl;
-    } catch (const ExpressionTreeException& ex) {
-        std::cout << ex.errorMessage() << "; column: " << ex.column() << std::endl;
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("20.0 * x + 9.0 * x ^ 2.0 + 10.0 * x ^ 3.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
         assert(false);
     }
+
+	try {
+		const auto tree = EBST("5 * x ^ 0 + 4 * x^1 - 9.3 * x ^ 2 - 1 * x^0");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("6.0 + 4.0 * x - 9.30 * x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("(x - 2) * 10 + x ^ 3 * -10 - (x * 12) * x");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("20.0 - 10.0 * x - 12.0 * x ^ 2.0 + -10.0 * x ^ 3.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("x * 4 - x ^ 2 * 4");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("4.0 * x - 4.0 * x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
 
 	// invalid scenarios
     try {
         const auto tree = EBST("x^2 - 4x + 7 + x");
         assert(false && "did not caught missing operator");
-    } catch (const ExpressionTreeException&) {}
+	} catch (const ExpressionException&) {}
 
     try {
         const auto tree = EBST("xd^2 - 4 * x + 7 + x");
         assert(false && "did not caught multiple char variable");
-    } catch (const ExpressionTreeException&) {}
+	} catch (const ExpressionException&) {}
 
     try {
         const auto tree = EBST("(x + 10");
         assert(false && "did not caught missing ')' bracket");
-    } catch (const ExpressionTreeException&) {}
+	} catch (const ExpressionException&) {}
 
     try {
         const auto tree = EBST("x + 10)");
         assert(false && "did not caught missing '(' bracket");
-    } catch (const ExpressionTreeException&) {}
+	} catch (const ExpressionException&) {}
 
     try {
         const auto tree = EBST("10 ? 2");
         assert(false && "did not caught invalid operator");
-    } catch (const ExpressionTreeException&) {}
+	} catch (const ExpressionException&) {}
 
     try {
         const auto tree = EBST("10.312.312.312 + 543.534543.543");
         assert(false && "did not caught invalid operand");
-    } catch (const ExpressionTreeException&) {}
+	} catch (const ExpressionException&) {}
+
+	try {
+		const auto tree = EBST("10 / (x - 2) + 10 * x ^ 2");
+		assert(false && "did not caught too complex division");
+	} catch (const ExpressionException&) {}
+
+	try {
+		const auto tree = EBST("3 ^ (x - 20) + 20 * x");
+		assert(false && "did not caught too complex degree");
+	} catch (const ExpressionException&) {}
+
+	try {
+		const auto tree = EBST("x / (x - 2) + 10 * x ^ 2");
+		assert(false && "did not caught too complex division");
+	} catch (const ExpressionException&) {}
+
+	try {
+		const auto tree = EBST("x ^ (x - 20) + 20 * x");
+		assert(false && "did not caught too complex degree");
+	} catch (const ExpressionException&) {}
+
+	try {
+		const auto tree = EBST("(x / 100) / (x - 2) + 10 * x ^ 2");
+		assert(false && "did not caught too complex division");
+	} catch (const ExpressionException&) {}
+
+	try {
+		const auto tree = EBST("(x / 100) ^ (x - 20) + 20 * x");
+		assert(false && "did not caught too complex degree");
+	} catch (const ExpressionException&) {}
 
     std::cout << "Tree OK" << std::endl;
 }

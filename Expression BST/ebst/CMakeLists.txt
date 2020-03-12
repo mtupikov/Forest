@@ -7,6 +7,10 @@ add_library(ebst STATIC
 	NodeReduce.cpp
 	NodeBalancing.cpp
 	NodeSimplifiers.cpp
+
+	ExpressionException.h
+	ExpressionException.cpp
+
 	ExpressionNode.h
 	ExpressionNode.cpp
 )

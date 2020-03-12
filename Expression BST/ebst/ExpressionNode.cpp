@@ -1,5 +1,7 @@
 #include "ExpressionNode.h"
 
+#include "ExpressionException.h"
+
 #include <string>
 #include <cmath>
 #include <iostream>
@@ -104,6 +106,10 @@ ExpressionNode ExpressionNode::operator*(const ExpressionNode& rhs) const {
 }
 
 ExpressionNode ExpressionNode::operator/(const ExpressionNode& rhs) const {
+	if (rhs.operandValue().value == 0.0) {
+		throw ExpressionException(ExpressionError::DivisionByZero, 0);
+	}
+
     return ExpressionNode(operandValue().value / rhs.operandValue().value);
 }
 

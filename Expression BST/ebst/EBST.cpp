@@ -1,30 +1,26 @@
 #include "EBST.h"
 
+#include "ExpressionException.h"
+
 #include <cctype>
 #include <stack>
 #include <exception>
 #include <algorithm>
 
-ExpressionTreeException::ExpressionTreeException(const std::string& message, int column)
-    : std::logic_error(message)
-    , m_message(message)
-    , m_column(column)
-{
-}
-
-std::string ExpressionTreeException::errorMessage() const {
-    return m_message;
-}
-
-int ExpressionTreeException::column() const {
-    return m_column;
-}
-
 EBST::EBST(const std::string& expressionString) {
     auto parsedExp = parseExpression(expressionString);
     buildTree(parsedExp);
-	buildReducedFormTree(m_rootNode);
-	buildBalancedTree(m_reducedTreeRootNode);
+	m_reducedTreeRootNode = buildReducedFormTree(m_rootNode);
+	m_balancedTreeRootNode = buildBalancedTree(m_reducedTreeRootNode);
+
+	if (!treeIsBalanced()) {
+		m_reducedTreeRootNode = buildReducedFormTree(m_balancedTreeRootNode);
+		m_balancedTreeRootNode = buildBalancedTree(m_reducedTreeRootNode);
+
+		if (!treeIsBalanced()) {
+			throw ExpressionException(ExpressionError::CannotBalance, 0);
+		}
+	}
 }
 
 std::string EBST::toString(OutputType type) const {
@@ -37,7 +33,11 @@ std::string EBST::toString(OutputType type) const {
 	case OutputType::ReducedInfix: return outputInfix(m_balancedTreeRootNode, type == OutputType::ReducedInfixWithParentheses);
     }
 
-    return {};
+	return {};
+}
+
+int EBST::maxDegree() const {
+	return m_maxDegree;
 }
 
 std::vector<ExpressionResult> EBST::calculateResult() const {
@@ -101,13 +101,13 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             --it;
 
             if (strVal.length() > 1) {
-				throw ExpressionTreeException("Unknown operand must be 1 character", static_cast<int>(std::distance(expr.cbegin(), it)));
+				throw ExpressionException(ExpressionError::UnknownOperandSize, static_cast<int>(std::distance(expr.cbegin(), it)));
             }
 
             return parseOperandNodeFromString(strVal);
         }
 
-		throw ExpressionTreeException("Invalid token", static_cast<int>(std::distance(expr.cbegin(), it)));
+		throw ExpressionException(ExpressionError::InvalidToken, static_cast<int>(std::distance(expr.cbegin(), it)));
         return std::nullopt;
     };
 
@@ -141,7 +141,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
 		    && !nextTokenIsNumberAndPrevIsOperator) {
 
 			if (expressionNodeIsOperator(lastExpressionNode) && !isBracket(lastExpressionNode.value())) {
-				throw ExpressionTreeException("Operator can't be placed after another operator", distanceFromBegin(it));
+				throw ExpressionException(ExpressionError::OperatorAfterOperator, distanceFromBegin(it));
 			}
 
 			auto op = pOp.value();
@@ -166,7 +166,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             if (pOp.has_value()) {
                 stack.push(pOp.value());
             } else {
-				throw ExpressionTreeException("Left bracket is invalid", distanceFromBegin(it));
+				throw ExpressionException(ExpressionError::LeftBracketError, distanceFromBegin(it));
             }
         } else if (c == ')') {
             auto top = stack.top();
@@ -174,7 +174,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
                 output.push_back(top);
                 stack.pop();
                 if (stack.empty()) {
-					throw ExpressionTreeException("Missing '(' parentheses" , distanceFromBegin(it));
+					throw ExpressionException(ExpressionError::MissingLeftParentheses, distanceFromBegin(it));
                 }
                 top = stack.top();
             }
@@ -184,14 +184,14 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
             }
         } else {
             if (lastExpressionNode.has_value() && lastExpressionNode.value().type() == ExpressionType::Operand) {
-				throw ExpressionTreeException("Missing operator between operands" , distanceFromBegin(it));
+				throw ExpressionException(ExpressionError::MissingOperator, distanceFromBegin(it));
             }
 
             pOp = readToken(it);
             if (pOp.has_value()) {
                 output.push_back(pOp.value());
             } else {
-				throw ExpressionTreeException("Invalid operand" , distanceFromBegin(it));
+				throw ExpressionException(ExpressionError::InvalidToken, distanceFromBegin(it));
             }
         }
 
@@ -201,7 +201,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
     while (!stack.empty()) {
         auto rToken = stack.top();
         if (isBracket(rToken)) {
-			throw ExpressionTreeException("Missing ')' parentheses" , distanceFromBegin(expr.cend()));
+			throw ExpressionException(ExpressionError::MissingRightParentheses, distanceFromBegin(expr.cend()));
         }
         output.push_back(rToken);
         stack.pop();

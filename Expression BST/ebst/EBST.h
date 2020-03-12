@@ -11,18 +11,6 @@ struct ExpressionResult {
 	double varResult;
 };
 
-class ExpressionTreeException : public std::logic_error {
-public:
-    ExpressionTreeException(const std::string& message, int column);
-
-    std::string errorMessage() const;
-    int column() const;
-
-private:
-    std::string m_message;
-    int m_column;
-};
-
 class EBST final : public AbstractBST<ExpressionNode, bool> {
 public:
 	using AbstractBaseTree = AbstractBST<ExpressionNode, bool>;
@@ -40,7 +28,7 @@ public:
 	explicit EBST(const std::string& expressionString);
 
 	std::string toString(OutputType type = OutputType::Infix) const;
-
+	int maxDegree() const;
 	std::vector<ExpressionResult> calculateResult() const;
 
 private:
@@ -97,14 +85,16 @@ private:
     void buildTree(const std::vector<ExpressionNode>& expressionString);
 
 	// NodeReduce.cpp
-	void buildReducedFormTree(const NodePtr& node);
+	NodePtr buildReducedFormTree(const NodePtr& node);
 	NodePtr reduceNode(const NodePtr& parent) const;
 
 	// NodeBalancing.cpp
-	void buildBalancedTree(const NodePtr& node);
+	NodePtr buildBalancedTree(const NodePtr& node);
+	void splitSubtreesByDegree(const NodePtr& root);
 	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
 	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type, bool isLeft);
 	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec) const;
+	bool treeIsBalanced() const;
 
 	// NodeOutput.cpp
 	std::string outputInfix(const NodePtr& ptr, bool withBrackets) const;
@@ -117,9 +107,11 @@ private:
 	NodePtr simplifySubstitution(NodePtr& node) const;
 	NodePtr simplifyMultiplication(NodePtr& node) const;
 	NodePtr simplifyDivision(NodePtr& node) const;
+	NodePtr simplifyPower(NodePtr& node) const;
 	NodePtr simplifyTwoNumbers(const NodePtr& node, const ExpressionNode& leftExp, const ExpressionNode& rightExp) const;
-	NodePtr simplifyOperatorAndNumber(NodePtr& node, const ExpressionNode& number, bool leftIsOp) const;
+	NodePtr simplifyOperatorAndNumber(NodePtr& node, const ExpressionNode& op, bool leftIsOp) const;
 	NodePtr simplifySubTreeWithUnknowns(const NodePtr& ptr) const;
+	void switchLeftRightIfNumberOnRight(const NodePtr& ptr) const;
 
 	// NodeRules.cpp
 	NodePtr applyRulesToTree(NodePtr& parent) const;
@@ -142,11 +134,14 @@ private:
 	int getMaximumPowerOfSubtree(const NodePtr& node) const;
 	int countUnknownVars(const NodePtr& node) const;
 	bool nodeHasChildren(const NodePtr& node) const;
+	int calculateMaxDegree() const;
 
 	// members
 	NodePtr m_balancedTreeRootNode;
     NodePtr m_reducedTreeRootNode;
 	std::map<int, std::vector<SubtreeWithOperator>> m_degreeSubtrees;
+	int m_maxDegree = 0;
+	bool m_isBalanced = false;
 
 	// unused stuff
     void insert(const ExpressionNode& key, const bool&) override;

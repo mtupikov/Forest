@@ -1,7 +1,7 @@
 #include "EBST.h"
 
-void EBST::buildReducedFormTree(const NodePtr& node) {
-	m_reducedTreeRootNode = reduceNode(node);
+EBST::NodePtr EBST::buildReducedFormTree(const NodePtr& node) {
+	return reduceNode(node);
 }
 
 EBST::NodePtr EBST::reduceNode(const NodePtr &parent) const {
@@ -35,8 +35,8 @@ EBST::NodePtr EBST::reduceNode(const NodePtr &parent) const {
 		if (onlyNumbers) {
 			return simplifyTwoNumbers(newNode, leftExp, rightExp);
 		} else if (numberAndOperator) {
-			const auto& num = leftExprIsOperator ? rightExp : leftExp;
-			newNode = simplifyOperatorAndNumber(newNode, num, leftExprIsOperator);
+			const auto& op = leftExprIsOperator ? rightExp : leftExp;
+			newNode = simplifyOperatorAndNumber(newNode, op, leftExprIsOperator);
 		} else if (nodeHasUnknownExpr(newNode)) {
 			return simplifySubTreeWithUnknowns(newNode);
 		}

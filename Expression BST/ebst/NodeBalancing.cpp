@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-void EBST::buildBalancedTree(const NodePtr& node) {
-	distributeSubtrees(node, OperatorType::Addition, false);
+EBST::NodePtr EBST::buildBalancedTree(const NodePtr& node) {
+	splitSubtreesByDegree(node);
 
 	std::vector<SubtreeWithOperator> rootTreeVec;
 	for (const auto& pair : m_degreeSubtrees) {
@@ -17,7 +17,23 @@ void EBST::buildBalancedTree(const NodePtr& node) {
 		rootTreeVec.push_back({ reduceNode(degreeTree), degTreeOp, false });
 	}
 
-	m_balancedTreeRootNode = buildTreeFromVectorOfNodes(rootTreeVec);
+	auto balancedTree = buildTreeFromVectorOfNodes(rootTreeVec);
+
+	m_isBalanced = true;
+	splitSubtreesByDegree(balancedTree);
+	for (const auto& pair : m_degreeSubtrees) {
+		if (pair.second.size() != 1) {
+			m_isBalanced = false;
+			break;
+		}
+	}
+
+	return balancedTree;
+}
+
+void EBST::splitSubtreesByDegree(const NodePtr& root) {
+	m_degreeSubtrees.clear();
+	distributeSubtrees(root, OperatorType::Addition, false);
 }
 
 void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft) {
@@ -113,4 +129,8 @@ EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOper
 	}
 
 	return root;
+}
+
+bool EBST::treeIsBalanced() const {
+	return m_isBalanced;
 }
