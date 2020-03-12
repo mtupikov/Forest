@@ -741,10 +741,24 @@ EBST::NodePtr EBST::simplifySubTreeWithUnknowns(const NodePtr& ptr) const {
 }
 
 void EBST::switchLeftRightIfNumberOnRight(const NodePtr& ptr) const {
-	const auto rightRule = getRuleForNode(ptr->m_right);
-	const auto rightIsNumber = rightRule == NodeRule::NumberVar;
+	if (!nodeHasChildren(ptr)) {
+		return;
+	}
 
-	if (rightIsNumber) {
+	switchLeftRightIfNumberOnRight(ptr->m_left);
+	switchLeftRightIfNumberOnRight(ptr->m_right);
+
+	const auto rightRule = getRuleForNode(ptr->m_right);
+	const auto leftRule = getRuleForNode(ptr->m_left);
+	const auto rightIsNumber = rightRule == NodeRule::NumberVar;
+	const auto leftIsNumber = leftRule == NodeRule::NumberVar;
+	const auto rootRule = getRuleForNode(ptr);
+	const auto leftIsOpAndRootMul = isOperator(ptr->m_left->m_keyValue.first) && rootRule == NodeRule::Multiplication;
+	const auto rootNotValid = rootRule == NodeRule::Power || rootRule == NodeRule::DivisionModulo || rootRule == NodeRule::AdditionSubstitution;
+
+	if (rightIsNumber
+	    && (!leftIsNumber || leftIsOpAndRootMul)
+	    && !rootNotValid) {
 		auto r = ptr->m_right;
 		auto l = ptr->m_left;
 		ptr->m_left = r;

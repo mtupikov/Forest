@@ -76,6 +76,14 @@ void operatorTest() {
 }
 
 void ebstTest() {
+	try {
+		const auto tree = EBST("x - X + x * x - 10 * (10 * X)");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("-100.0 * x + x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
 	 try {
 		 const auto tree = EBST("(x^2 + (-10.123450 * 660000) + x % 100)");
 		 assert(tree.toString(EBST::OutputType::ReducedInfix).compare("-6681477.0 + x % 100.0 + x ^ 2.0") == 0);
@@ -86,7 +94,7 @@ void ebstTest() {
 
 	 try {
 		 const auto tree = EBST("-10 * x^2 - -4 * x + 7 + x");
-		 assert(tree.toString(EBST::OutputType::ReducedInfix).compare("7.0 + -5.0 * x + -10.0 * x ^ 2.0") == 0);
+		 assert(tree.toString(EBST::OutputType::ReducedInfix).compare("7.0 + 5.0 * x + -10.0 * x ^ 2.0") == 0);
 	 } catch (const ExpressionException& ex) {
 		 std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		 assert(false);
@@ -100,17 +108,17 @@ void ebstTest() {
 		assert(false);
 	}
 
-    try {
+	try {
 		const auto tree = EBST("(x + (10 * x)) * x - 20 * x + 10 * x ^ 3 - x ^ 2 * 2");
-		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("20.0 * x + 9.0 * x ^ 2.0 + 10.0 * x ^ 3.0") == 0);
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("-20.0 * x + 9.0 * x ^ 2.0 + 10.0 * x ^ 3.0") == 0);
 	} catch (const ExpressionException& ex) {
 		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
-        assert(false);
-    }
+		assert(false);
+	}
 
 	try {
 		const auto tree = EBST("5 * x ^ 0 + 4 * x^1 - 9.3 * x ^ 2 - 1 * x^0");
-		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("6.0 + 4.0 * x - 9.30 * x ^ 2.0") == 0);
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("4.0 + 4.0 * x - 9.30 * x ^ 2.0") == 0);
 	} catch (const ExpressionException& ex) {
 		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		assert(false);
@@ -118,7 +126,7 @@ void ebstTest() {
 
 	try {
 		const auto tree = EBST("(x - 2) * 10 + x ^ 3 * -10 - (x * 12) * x");
-		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("20.0 - 10.0 * x - 12.0 * x ^ 2.0 + -10.0 * x ^ 3.0") == 0);
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("-20.0 + 10.0 * x - 12.0 * x ^ 2.0 + -10.0 * x ^ 3.0") == 0);
 	} catch (const ExpressionException& ex) {
 		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		assert(false);
@@ -133,6 +141,11 @@ void ebstTest() {
 	}
 
 	// invalid scenarios
+	try {
+		const auto tree = EBST("x^2 - 4 * y + 5 * x");
+		assert(false && "did not caught multiple unknowns");
+	} catch (const ExpressionException&) {}
+
     try {
         const auto tree = EBST("x^2 - 4x + 7 + x");
         assert(false && "did not caught missing operator");

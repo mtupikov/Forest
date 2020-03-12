@@ -9,7 +9,7 @@ EBST::NodePtr EBST::buildBalancedTree(const NodePtr& node) {
 	for (const auto& pair : m_degreeSubtrees) {
 		auto vec = pair.second;
 		std::partition(vec.begin(), vec.end(), [](const SubtreeWithOperator& s) {
-			return s.isLeft || s.op == OperatorType::Addition;
+			return s.isLeft && s.op == OperatorType::Addition;
 		});
 		auto degreeTree = buildTreeFromVectorOfNodes(vec);
 
@@ -89,14 +89,13 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 		return;
 	}
 
-	const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
 	const auto isUnknown = isOperandUnknown(node->m_keyValue.first.operandValue());
 
 	if (!isUnknown && node->m_keyValue.first.operandValue().value == 0.0) {
 		return;
 	}
 
-	insertNodeIntoDegreeSubtreesMap(node, isUnknown ? 1 : 0, resolvedIfLeftOp, isLeft);
+	insertNodeIntoDegreeSubtreesMap(node, isUnknown ? 1 : 0, parentOp, isLeft);
 }
 
 void EBST::insertNodeIntoDegreeSubtreesMap(const NodePtr& node, int power, OperatorType type, bool isLeft) {
@@ -108,27 +107,35 @@ void EBST::insertNodeIntoDegreeSubtreesMap(const NodePtr& node, int power, Opera
 	degreeVec.push_back({ node, type, isLeft });
 }
 
-EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec) const {
-	NodePtr root;
-	NodePtr mostRecentParent;
+EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree) const {
 	for (auto it = vec.cbegin(); it < vec.cend();) {
 		auto next = std::next(it, 1);
 		if (next != vec.cend()) {
 			auto opNode = allocateNode(ExpressionNode(next->op));
 
-			if (!root) {
-				root = opNode;
-			}
-
 			opNode->m_left = it->subtree;
-			opNode->m_right = buildTreeFromVectorOfNodes(std::vector(next, vec.cend()));
+			opNode->m_right = buildTreeFromVectorOfNodes(std::vector(next, vec.cend()), true);
 			return opNode;
+		}
+
+		auto& subtree = it->subtree;
+		const auto nodeIsSimple = (nodeHasChildren(subtree)
+		                          && !nodeHasChildren(subtree->m_left)
+		                          && !nodeHasChildren(subtree->m_right))
+		                          || !nodeHasChildren(subtree);
+
+		if (!hasParentTree && it->op == OperatorType::Substitution && nodeIsSimple) {
+			auto op = allocateNode(ExpressionNode(OperatorType::Multiplication));
+			op->m_left = allocateNode(ExpressionNode(-1.0));
+			op->m_right = it->subtree;
+
+			return op;
 		}
 
 		return it->subtree;
 	}
 
-	return root;
+	return {};
 }
 
 bool EBST::treeIsBalanced() const {

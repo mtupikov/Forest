@@ -6,6 +6,7 @@
 #include <stack>
 #include <exception>
 #include <algorithm>
+#include <set>
 
 EBST::EBST(const std::string& expressionString) {
     auto parsedExp = parseExpression(expressionString);
@@ -40,6 +41,10 @@ int EBST::maxDegree() const {
 	return m_maxDegree;
 }
 
+char EBST::unknownOperandName() const {
+	return m_unknownOperandName;
+}
+
 std::vector<ExpressionResult> EBST::calculateResult() const {
 	return std::vector<ExpressionResult>();
 }
@@ -68,15 +73,32 @@ void EBST::buildTree(const std::vector<ExpressionNode>& expr) {
     stack.pop();
 }
 
-std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const {
+std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) {
     std::vector<ExpressionNode> output;
     std::stack<ExpressionNode> stack;
+	std::set<char> unknownOperands;
 
-    const auto readToken = [&expr](auto& it) -> std::optional<ExpressionNode> {
+	const auto readToken = [&expr, &unknownOperands, &stack](auto& it, const std::optional<ExpressionNode>& lastExpr) -> std::optional<ExpressionNode> {
         auto dotFound = false;
 
         if (std::isdigit(*it) || *it == '-' || *it == '+') {
             auto begin = it;
+
+			if (lastExpr.has_value() && *it == '-'
+			    && (lastExpr.value().operatorType() == OperatorType::Substitution || lastExpr.value().operatorType() == OperatorType::Addition)) {
+				auto lastOp = lastExpr.value().operatorType();
+
+				if (lastOp == OperatorType::Substitution) {
+					stack.pop();
+					stack.push(ExpressionNode(OperatorType::Addition));
+					++begin;
+				} else if (lastOp == OperatorType::Addition) {
+					stack.pop();
+					stack.push(ExpressionNode(OperatorType::Substitution));
+					++begin;
+				}
+			}
+
             ++it;
             while (it != expr.cend() && (std::isdigit(*it) || (*it == '.' && !dotFound))) {
                 if (*it == '.') {
@@ -104,7 +126,13 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
 				throw ExpressionException(ExpressionError::UnknownOperandSize, static_cast<int>(std::distance(expr.cbegin(), it)));
             }
 
-            return parseOperandNodeFromString(strVal);
+			const auto ch = static_cast<char>(std::tolower(strVal.front()));
+			unknownOperands.insert(ch);
+			if (unknownOperands.size() > 1) {
+				throw ExpressionException(ExpressionError::MultipleUnknownOperands, static_cast<int>(std::distance(expr.cbegin(), it)));
+			}
+
+			return parseOperandNodeFromString({ ch });
         }
 
 		throw ExpressionException(ExpressionError::InvalidToken, static_cast<int>(std::distance(expr.cbegin(), it)));
@@ -187,7 +215,7 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
 				throw ExpressionException(ExpressionError::MissingOperator, distanceFromBegin(it));
             }
 
-            pOp = readToken(it);
+			pOp = readToken(it, lastExpressionNode);
             if (pOp.has_value()) {
                 output.push_back(pOp.value());
             } else {
@@ -206,6 +234,11 @@ std::vector<ExpressionNode> EBST::parseExpression(const std::string& expr) const
         output.push_back(rToken);
         stack.pop();
     }
+
+	assert(unknownOperands.size() <= 1 && "missed multiple unknown operands");
+	if (unknownOperands.size() == 1) {
+		m_unknownOperandName = static_cast<char>(*unknownOperands.cbegin());
+	}
 
 	return output;
 }

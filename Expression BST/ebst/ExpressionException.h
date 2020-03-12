@@ -13,7 +13,8 @@ enum class ExpressionError {
 	UnknownOperandSize,
 	CannotBalance,
 	TooComplexDivision,
-	TooComplexDegree
+	TooComplexDegree,
+	MultipleUnknownOperands,
 };
 
 class ExpressionException : public std::logic_error {

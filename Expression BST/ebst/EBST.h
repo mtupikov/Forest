@@ -29,6 +29,7 @@ public:
 
 	std::string toString(OutputType type = OutputType::Infix) const;
 	int maxDegree() const;
+	char unknownOperandName() const;
 	std::vector<ExpressionResult> calculateResult() const;
 
 private:
@@ -80,7 +81,7 @@ private:
 	friend NodeRule operator|(NodeRule a, NodeRule b);
 	std::string toString(const NodeRule rule) const;
 
-	std::vector<ExpressionNode> parseExpression(const std::string& expressionString) const;
+	std::vector<ExpressionNode> parseExpression(const std::string& expressionString);
 
     void buildTree(const std::vector<ExpressionNode>& expressionString);
 
@@ -93,7 +94,7 @@ private:
 	void splitSubtreesByDegree(const NodePtr& root);
 	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
 	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type, bool isLeft);
-	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec) const;
+	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree = false) const;
 	bool treeIsBalanced() const;
 
 	// NodeOutput.cpp
@@ -142,6 +143,7 @@ private:
 	std::map<int, std::vector<SubtreeWithOperator>> m_degreeSubtrees;
 	int m_maxDegree = 0;
 	bool m_isBalanced = false;
+	char m_unknownOperandName = invalidOperandVarName;
 
 	// unused stuff
     void insert(const ExpressionNode& key, const bool&) override;

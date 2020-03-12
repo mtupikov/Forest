@@ -20,7 +20,10 @@ std::string ExpressionException::toString() const {
 		{ ExpressionError::OperatorAfterOperator, "Operator cannot be placed after another operator" },
 		{ ExpressionError::InvalidToken, "Invalid token" },
 		{ ExpressionError::UnknownOperandSize, "Unknown operand must be single char" },
-		{ ExpressionError::CannotBalance, "Cannot simplify given expression" }
+		{ ExpressionError::CannotBalance, "Cannot simplify given expression" },
+		{ ExpressionError::TooComplexDivision, "Too complex expression in lower division part" },
+		{ ExpressionError::TooComplexDegree, "Too complex expression in degree" },
+		{ ExpressionError::MultipleUnknownOperands, "Multiple unknown operands" }
 	};
 
 	auto it = errorToStringMap.find(m_type);
