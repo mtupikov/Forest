@@ -22,6 +22,8 @@ EBST::EBST(const std::string& expressionString) {
 			throw ExpressionException(ExpressionError::CannotBalance, 0);
 		}
 	}
+
+	solveExpression();
 }
 
 std::string EBST::toString(OutputType type) const {
@@ -41,12 +43,12 @@ int EBST::maxDegree() const {
 	return m_maxDegree;
 }
 
-char EBST::unknownOperandName() const {
+std::string EBST::unknownOperandName() const {
 	return m_unknownOperandName;
 }
 
-std::vector<ExpressionResult> EBST::calculateResult() const {
-	return std::vector<ExpressionResult>();
+ExpressionSolution EBST::solution() const {
+	return m_solution;
 }
 
 void EBST::buildTree(const std::vector<ExpressionNode>& expr) {

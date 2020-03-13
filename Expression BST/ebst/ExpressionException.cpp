@@ -23,7 +23,8 @@ std::string ExpressionException::toString() const {
 		{ ExpressionError::CannotBalance, "Cannot simplify given expression" },
 		{ ExpressionError::TooComplexDivision, "Too complex expression in lower division part" },
 		{ ExpressionError::TooComplexDegree, "Too complex expression in degree" },
-		{ ExpressionError::MultipleUnknownOperands, "Multiple unknown operands" }
+		{ ExpressionError::MultipleUnknownOperands, "Multiple unknown operands" },
+		{ ExpressionError::Unsolvable, "Expression has no solutions"}
 	};
 
 	auto it = errorToStringMap.find(m_type);

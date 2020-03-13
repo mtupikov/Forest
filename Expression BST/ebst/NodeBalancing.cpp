@@ -33,16 +33,22 @@ EBST::NodePtr EBST::buildBalancedTree(const NodePtr& node) {
 
 	// all simplified to zero
 	if (!balancedTree) {
-		return allocateNode(ExpressionNode(0.0));
+		auto zero = allocateNode(ExpressionNode(0.0));
+		m_degreeSubtrees[0].push_back({ zero, OperatorType::Addition, false });
+		return zero;
 	}
 
 	splitSubtreesByDegree(balancedTree);
+	auto maxDegree = 0;
 	for (const auto& pair : m_degreeSubtrees) {
 		if (pair.second.size() != 1) {
 			m_isBalanced = false;
-			break;
 		}
+
+		maxDegree = std::max(maxDegree, pair.first);
 	}
+
+	m_maxDegree = maxDegree;
 
 	return balancedTree;
 }

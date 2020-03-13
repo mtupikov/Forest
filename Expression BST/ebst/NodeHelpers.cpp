@@ -79,3 +79,17 @@ int EBST::countUnknownVars(const NodePtr& node) const {
 bool EBST::nodeHasChildren(const NodePtr& node) const {
 	return node->m_left && node->m_right;
 }
+
+double EBST::retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp) const {
+	const auto rule = getRuleForNode(node);
+
+	const auto modifier = prevOp == OperatorType::Substitution ? -1 : 1;
+
+	if (rule == NodeRule::NumberVar) {
+		return node->m_keyValue.first.operandValue().value * modifier;
+	} else if (rule == NodeRule::Multiplication) {
+		return node->m_left->m_keyValue.first.operandValue().value * modifier;
+	}
+
+	return modifier;
+}

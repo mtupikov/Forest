@@ -5,10 +5,16 @@
 #include <AbstractBST.h>
 #include <vector>
 #include <exception>
+#include <complex>
 
 struct ExpressionResult {
-	char varName;
-	double varResult;
+	std::string varName;
+	std::string varResult;
+};
+
+struct ExpressionSolution {
+	std::vector<ExpressionResult> solutions;
+	std::optional<double> discriminant;
 };
 
 class EBST final : public AbstractBST<ExpressionNode, bool> {
@@ -29,8 +35,8 @@ public:
 
 	std::string toString(OutputType type = OutputType::Infix) const;
 	int maxDegree() const;
-	char unknownOperandName() const;
-	std::vector<ExpressionResult> calculateResult() const;
+	std::string unknownOperandName() const;
+	ExpressionSolution solution() const;
 
 private:
 	struct Node final : public AbstractBaseTree::AbstractNode {
@@ -136,14 +142,23 @@ private:
 	int countUnknownVars(const NodePtr& node) const;
 	bool nodeHasChildren(const NodePtr& node) const;
 	int calculateMaxDegree() const;
+	double retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp) const;
+
+	// NodeSolver.cpp
+	void solveExpression();
+	void solveNumber();
+	void solveLinear();
+	void solveQuadratic();
+	void solveLobachevsky();
 
 	// members
 	NodePtr m_balancedTreeRootNode;
     NodePtr m_reducedTreeRootNode;
 	std::map<int, std::vector<SubtreeWithOperator>> m_degreeSubtrees;
+	ExpressionSolution m_solution;
 	int m_maxDegree = 0;
 	bool m_isBalanced = false;
-	char m_unknownOperandName = invalidOperandVarName;
+	std::string m_unknownOperandName = {invalidOperandVarName};
 
 	// unused stuff
     void insert(const ExpressionNode& key, const bool&) override;
