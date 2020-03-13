@@ -94,7 +94,7 @@ private:
 	void splitSubtreesByDegree(const NodePtr& root);
 	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
 	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type, bool isLeft);
-	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree = false) const;
+	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree = false, bool isBalancedFirst = false) const;
 	bool treeIsBalanced() const;
 
 	// NodeOutput.cpp

@@ -5,21 +5,37 @@
 EBST::NodePtr EBST::buildBalancedTree(const NodePtr& node) {
 	splitSubtreesByDegree(node);
 
+	const auto nodeIsNumberZero = [this](const NodePtr& node) {
+		return getRuleForNode(node) == NumberVar && getExpressionNode(node).operandValue().value == 0.0;
+	};
+
+	auto countDeg = 0;
 	std::vector<SubtreeWithOperator> rootTreeVec;
 	for (const auto& pair : m_degreeSubtrees) {
 		auto vec = pair.second;
 		std::partition(vec.begin(), vec.end(), [](const SubtreeWithOperator& s) {
 			return s.isLeft && s.op == OperatorType::Addition;
 		});
-		auto degreeTree = buildTreeFromVectorOfNodes(vec);
+		auto degreeTree = buildTreeFromVectorOfNodes(vec, false, countDeg == 0);
 
 		auto degTreeOp = vec.size() == 1 ? vec.front().op : OperatorType::Addition;
-		rootTreeVec.push_back({ reduceNode(degreeTree), degTreeOp, false });
+
+		auto reducedNode = reduceNode(degreeTree);
+
+		if (!nodeIsNumberZero(reducedNode)) {
+			rootTreeVec.push_back({ reducedNode, degTreeOp, false });
+			++countDeg;
+		}
 	}
 
 	auto balancedTree = buildTreeFromVectorOfNodes(rootTreeVec);
-
 	m_isBalanced = true;
+
+	// all simplified to zero
+	if (!balancedTree) {
+		return allocateNode(ExpressionNode(0.0));
+	}
+
 	splitSubtreesByDegree(balancedTree);
 	for (const auto& pair : m_degreeSubtrees) {
 		if (pair.second.size() != 1) {
@@ -107,24 +123,25 @@ void EBST::insertNodeIntoDegreeSubtreesMap(const NodePtr& node, int power, Opera
 	degreeVec.push_back({ node, type, isLeft });
 }
 
-EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree) const {
+EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree, bool isBalancedFirst) const {
 	for (auto it = vec.cbegin(); it < vec.cend();) {
+		auto& subtree = it->subtree;
+
 		auto next = std::next(it, 1);
 		if (next != vec.cend()) {
 			auto opNode = allocateNode(ExpressionNode(next->op));
 
-			opNode->m_left = it->subtree;
+			opNode->m_left = subtree;
 			opNode->m_right = buildTreeFromVectorOfNodes(std::vector(next, vec.cend()), true);
 			return opNode;
 		}
 
-		auto& subtree = it->subtree;
 		const auto nodeIsSimple = (nodeHasChildren(subtree)
 		                          && !nodeHasChildren(subtree->m_left)
 		                          && !nodeHasChildren(subtree->m_right))
 		                          || !nodeHasChildren(subtree);
 
-		if (!hasParentTree && it->op == OperatorType::Substitution && nodeIsSimple) {
+		if (!hasParentTree && it->op == OperatorType::Substitution && nodeIsSimple && isBalancedFirst && !it->isLeft) {
 			auto op = allocateNode(ExpressionNode(OperatorType::Multiplication));
 			op->m_left = allocateNode(ExpressionNode(-1.0));
 			op->m_right = it->subtree;

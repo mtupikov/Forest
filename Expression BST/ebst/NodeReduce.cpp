@@ -13,9 +13,6 @@ EBST::NodePtr EBST::reduceNode(const NodePtr &parent) const {
 		newNode->m_left = reduceNode(left);
 		newNode->m_right = reduceNode(right);
 
-		auto l = outputInfix(newNode->m_left, true);
-		auto r = outputInfix(newNode->m_right, true);
-
 		newNode = applyRulesToSubTree(newNode);
 
 		auto leftExp = getExpressionNode(newNode->m_left);

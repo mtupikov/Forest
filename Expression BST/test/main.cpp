@@ -140,6 +140,79 @@ void ebstTest() {
 		assert(false);
 	}
 
+	try {
+		const auto tree = EBST("5 * x^0 + 4 * x^1 - 4 * x^0");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("1.0 + 4.0 * x") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("8 * x^0 - 6 * x^1 + 0 * x^2 - 5.6 * x^3 - 3 * x^0");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("5.0 - 6.0 * x - 5.60 * x ^ 3.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("5 + 4 * x + x^2- x^2");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("5.0 + 4.0 * x") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("5 * x^0 - 5 * x^0");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("0.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("4 * x^0 - 8 * x^0");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("-4.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("5 * x^0 - 4 * x^0 - 7 * x^1");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("1.0 - 7.0 * x") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("5 * x^0 + 13 * x^1 + 3 * x^2 - 1* x^0 - 1 * x^1");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("4.0 + 12.0 * x + 3.0 * x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("6 * x^0 + 11 * x^1 + 5 * x^2 - 1 * x^0 - 1 * x^1");
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("5.0 + 10.0 * x + 5.0 * x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
+	try {
+		const auto tree = EBST("5 * x^0 + 3 * x^1 + 3 * x^2 - 1 * x^0 + 0 * x^1");
+		std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("4.0 + 3.0 * x + 3.0 * x ^ 2.0") == 0);
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
 	// invalid scenarios
 	try {
 		const auto tree = EBST("x^2 - 4 * y + 5 * x");

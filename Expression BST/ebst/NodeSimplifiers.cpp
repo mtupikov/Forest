@@ -343,7 +343,7 @@ EBST::NodePtr EBST::simplifySubstitution(NodePtr& node) const {
 
 				if (resNum == 0.0) {
 					node = complexUnkNode;
-					return node;
+					break;
 				}
 
 				const auto newNumNode = allocateNode(ExpressionNode(resNum));
