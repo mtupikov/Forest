@@ -139,15 +139,7 @@ std::string ExpressionNode::toString() const {
             return { m_operand.variableName };
         }
 
-        auto str = std::to_string(m_operand.value);
-
-        auto lastZeroPos = str.find_last_not_of('0');
-        if (lastZeroPos + 1 != str.length()) {
-            lastZeroPos += 2;
-            str.erase(lastZeroPos, std::string::npos);
-        }
-
-        return str;
+		return trimToStringDouble(m_operand.value);
     }
 
     const std::map<OperatorType, char> operatorToChar {
@@ -225,4 +217,21 @@ bool isOperator(const ExpressionNode& node) {
 bool isBracket(const ExpressionNode &ex) {
     const auto type = ex.operatorType();
     return type == OperatorType::BracketLeft || type == OperatorType ::BracketRight;
+}
+
+std::string trimToStringDouble(double d) {
+	// lol
+	if (d == 0.0) {
+		d = abs(d);
+	}
+
+	auto str = std::to_string(d);
+
+	auto lastZeroPos = str.find_last_not_of('0');
+	if (lastZeroPos + 1 != str.length()) {
+		lastZeroPos += 2;
+		str.erase(lastZeroPos, std::string::npos);
+	}
+
+	return str;
 }

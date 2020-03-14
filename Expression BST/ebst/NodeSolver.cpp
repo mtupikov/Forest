@@ -7,9 +7,15 @@
 namespace {
 
 std::string complexToString(const std::complex<double>& c) {
-	std::stringstream ss;
-	ss << c;
-	return ss.str();
+	const auto realNum = c.real();
+	const auto imagNum = c.imag();
+
+	const auto realStr = trimToStringDouble(realNum);
+	const auto imagStr = trimToStringDouble(imagNum);
+
+	const auto optPlus = imagNum >= 0.0 ? "+" : "";
+
+	return realStr + optPlus + imagStr + "i";
 }
 
 } // end anonymous namepsace
@@ -64,7 +70,7 @@ void EBST::solveLinear() {
 	const auto unkNode = vecDegreeOne.front().subtree;
 	const auto numA = retrieveNumberFromNode(unkNode, vecDegreeOne.front().op);
 
-	m_solution.solutions.push_back({ {m_unknownOperandName}, std::to_string(solve(numA, numB)) });
+	m_solution.solutions.push_back({ {m_unknownOperandName}, trimToStringDouble(solve(numA, numB)) });
 }
 
 void EBST::solveQuadratic() {
@@ -100,8 +106,8 @@ void EBST::solveQuadratic() {
 
 		const auto v1Name = m_unknownOperandName + "1";
 		const auto v2Name = m_unknownOperandName + "2";
-		const auto v1Res = sqrtD1 - b / 2 * a;
-		const auto v2Res = sqrtD2 - b / 2 * a;
+		const auto v1Res = (sqrtD1 - b) / (2 * a);
+		const auto v2Res = (sqrtD2 - b) / (2 * a);
 
 		ExpressionResult res1{ v1Name, complexToString(v1Res) };
 		ExpressionResult res2{ v2Name, complexToString(v2Res) };
@@ -112,8 +118,8 @@ void EBST::solveQuadratic() {
 	const auto returnRealNumberResult = [this, &countSqrtOfDiscriminant](double a, double b, double d) -> std::vector<ExpressionResult> {
 		const auto sqrtD = countSqrtOfDiscriminant(d);
 
-		const auto numRes = (-1 * b + sqrtD.real()) / 2 * a;
-		ExpressionResult res{ m_unknownOperandName, std::to_string(numRes) };
+		const auto numRes = (-1 * b + sqrtD.real()) / (2 * a);
+		ExpressionResult res{ m_unknownOperandName, trimToStringDouble(numRes) };
 
 		return { res };
 	};
@@ -121,10 +127,10 @@ void EBST::solveQuadratic() {
 	const auto returnRealNumbersResult = [this, &countSqrtOfDiscriminant](double a, double b, double d) -> std::vector<ExpressionResult> {
 		const auto sqrtD = countSqrtOfDiscriminant(d);
 
-		const auto num1Res = (-1 * b - sqrtD.real()) / 2 * a;
-		const auto num2Res = (-1 * b + sqrtD.real()) / 2 * a;
-		ExpressionResult res1{ m_unknownOperandName + "1", std::to_string(num1Res) };
-		ExpressionResult res2{ m_unknownOperandName + "2", std::to_string(num2Res) };
+		const auto num1Res = (-1 * b - sqrtD.real()) / (2 * a);
+		const auto num2Res = (-1 * b + sqrtD.real()) / (2 * a);
+		ExpressionResult res1{ m_unknownOperandName + "1", trimToStringDouble(num1Res) };
+		ExpressionResult res2{ m_unknownOperandName + "2", trimToStringDouble(num2Res) };
 
 		return { res1, res2 };
 	};
@@ -139,7 +145,7 @@ void EBST::solveQuadratic() {
 
 	if (containsZeroDeg) {
 		const auto numNode = vecDegreeZero.front().subtree;
-		c = numNode->m_keyValue.first.operandValue().value;
+		c = retrieveNumberFromNode(numNode, vecDegreeZero.front().op);
 	}
 
 	if (containsOneDeg) {
@@ -151,7 +157,7 @@ void EBST::solveQuadratic() {
 
 	const auto d = discriminant(a, b ,c);
 
-	m_solution.discriminant = d;
+	m_solution.discriminant.emplace(d);
 	if (d < 0) {
 		m_solution.solutions = returnComplexResult(a, b, d);
 	} else if (d == 0.0) {

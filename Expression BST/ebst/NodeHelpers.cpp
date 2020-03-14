@@ -83,12 +83,19 @@ bool EBST::nodeHasChildren(const NodePtr& node) const {
 double EBST::retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp) const {
 	const auto rule = getRuleForNode(node);
 
-	const auto modifier = prevOp == OperatorType::Substitution ? -1 : 1;
+	const auto modifier = prevOp == OperatorType::Substitution ? -1.0 : 1.0;
 
 	if (rule == NodeRule::NumberVar) {
 		return node->m_keyValue.first.operandValue().value * modifier;
 	} else if (rule == NodeRule::Multiplication) {
 		return node->m_left->m_keyValue.first.operandValue().value * modifier;
+	} else if (rule == NodeRule::DivisionModulo) {
+		if (node->m_keyValue.first.operatorType() == OperatorType::Division) {
+			return modifier / node->m_right->m_keyValue.first.operandValue().value;
+		}
+
+		const auto expr = ExpressionNode(modifier) % node->m_right->m_keyValue.first;
+		return expr.operandValue().value;
 	}
 
 	return modifier;

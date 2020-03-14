@@ -76,3 +76,4 @@ bool isOperandUnknown(const Operand& op);
 bool isOperator(char c);
 bool isOperator(const ExpressionNode& node);
 bool isBracket(const ExpressionNode& ex);
+std::string trimToStringDouble(double d);
