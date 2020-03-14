@@ -34,10 +34,7 @@ void EBST::solveExpression() {
 		solveQuadratic();
 		break;
 	}
-	default: {
-		solveLobachevsky();
-		break;
-	}
+	default: throw ExpressionException(ExpressionError::DegreeHigherThanTwo, 0);
 	}
 }
 
@@ -165,8 +162,4 @@ void EBST::solveQuadratic() {
 	} else {
 		m_solution.solutions = returnRealNumbersResult(a, b, d);
 	}
-}
-
-void EBST::solveLobachevsky() {
-
 }

@@ -16,6 +16,7 @@ enum class ExpressionError {
 	TooComplexDegree,
 	MultipleUnknownOperands,
 	Unsolvable,
+	DegreeHigherThanTwo
 };
 
 class ExpressionException : public std::logic_error {

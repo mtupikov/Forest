@@ -149,7 +149,6 @@ private:
 	void solveNumber();
 	void solveLinear();
 	void solveQuadratic();
-	void solveLobachevsky();
 
 	// members
 	NodePtr m_balancedTreeRootNode;
