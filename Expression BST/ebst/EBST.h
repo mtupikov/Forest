@@ -142,13 +142,15 @@ private:
 	int countUnknownVars(const NodePtr& node) const;
 	bool nodeHasChildren(const NodePtr& node) const;
 	int calculateMaxDegree() const;
-	double retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp) const;
+	double retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp, bool isFirst) const;
 
 	// NodeSolver.cpp
 	void solveExpression();
 	void solveNumber();
 	void solveLinear();
 	void solveQuadratic();
+	void solveCubic();
+	double getNthDegreeUnknownValue(int degree, bool isFirst = false) const;
 
 	// members
 	NodePtr m_balancedTreeRootNode;

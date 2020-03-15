@@ -25,7 +25,7 @@ std::string ExpressionException::toString() const {
 		{ ExpressionError::TooComplexDegree, "Too complex expression in degree" },
 		{ ExpressionError::MultipleUnknownOperands, "Multiple unknown operands" },
 		{ ExpressionError::Unsolvable, "Expression has no solutions" },
-		{ ExpressionError::DegreeHigherThanTwo, "Degree is higher than two" }
+		{ ExpressionError::DegreeHigherThanThree, "Degree is higher than three" }
 	};
 
 	auto it = errorToStringMap.find(m_type);

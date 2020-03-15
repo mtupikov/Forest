@@ -28,7 +28,7 @@ EBST::NodePtr EBST::buildBalancedTree(const NodePtr& node) {
 		}
 	}
 
-	auto balancedTree = buildTreeFromVectorOfNodes(rootTreeVec);
+	auto balancedTree = buildTreeFromVectorOfNodes(rootTreeVec, false, true);
 	m_isBalanced = true;
 
 	// all simplified to zero
@@ -136,6 +136,8 @@ EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOper
 		auto next = std::next(it, 1);
 		if (next != vec.cend()) {
 			auto opNode = allocateNode(ExpressionNode(next->op));
+
+			std::cout << ExpressionNode(next->op) << " -> " << outputInfix(subtree, false) << std::endl;
 
 			opNode->m_left = subtree;
 			opNode->m_right = buildTreeFromVectorOfNodes(std::vector(next, vec.cend()), true);

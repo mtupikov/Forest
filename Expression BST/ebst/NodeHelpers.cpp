@@ -80,10 +80,10 @@ bool EBST::nodeHasChildren(const NodePtr& node) const {
 	return node->m_left && node->m_right;
 }
 
-double EBST::retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp) const {
+double EBST::retrieveNumberFromNode(const NodePtr& node, OperatorType prevOp, bool isFirst) const {
 	const auto rule = getRuleForNode(node);
 
-	const auto modifier = prevOp == OperatorType::Substitution ? -1.0 : 1.0;
+	const auto modifier = prevOp == OperatorType::Substitution && !isFirst ? -1.0 : 1.0;
 
 	if (rule == NodeRule::NumberVar) {
 		return node->m_keyValue.first.operandValue().value * modifier;

@@ -269,7 +269,6 @@ void ebstTest() {
 
 	try {
 		const auto tree = EBST("5 * x^0 + 3 * x^1 + 3 * x^2 - 1 * x^0 + 0 * x^1");
-		//std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
 		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("4.0 + 3.0 * x + 3.0 * x ^ 2.0") == 0);
 
 		const auto result = tree.solution().solutions;
@@ -285,6 +284,29 @@ void ebstTest() {
 		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
 		assert(false);
 	}
+
+	try {
+		const auto tree = EBST("8 * x^0 - 6 * x^1 + 0 * x^2 - 5.6 * x^3 - 3 * x^0");
+		//std::cout << tree.toString(EBST::OutputType::ReducedInfix) << std::endl;
+		assert(tree.toString(EBST::OutputType::ReducedInfix).compare("5.0 - 6.0 * x - 5.60 * x ^ 3.0") == 0);
+
+		const auto result = tree.solution().solutions;
+		assert(result.size() == 3);
+
+		auto res1 = result[0];
+		auto res2 = result[1];
+		auto res3 = result[2];
+		assert(res1.varName == "x1");
+		assert(res1.varResult == "-0.50-1.040833i");
+		assert(res2.varName == "x2");
+		assert(res2.varResult == "-0.50+1.040833i");
+		assert(res3.varName == "x3");
+		assert(res3.varResult == "-0.50+1.040833i");
+	} catch (const ExpressionException& ex) {
+		std::cout << ex.toString() << "; column: " << ex.column() << std::endl;
+		assert(false);
+	}
+
 
 	// invalid scenarios
 	try {
@@ -358,8 +380,8 @@ void ebstTest() {
 	} catch (const ExpressionException&) {}
 
 	try {
-		const auto tree = EBST("8 * x^0 - 6 * x^1 + 0 * x^2 - 5.6 * x^3 - 3 * x^0");
-		assert(false && "uncought degree higher than two");
+		const auto tree = EBST("8 * x^0 - 6 * x^1 + 0 * x^2 - 5.6 * x^4 - 3 * x^3");
+		assert(false && "uncought degree higher than three");
 	} catch (const ExpressionException&) {}
 
     std::cout << "Tree OK" << std::endl;
