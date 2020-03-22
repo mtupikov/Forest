@@ -55,10 +55,10 @@ EBST::NodePtr EBST::buildBalancedTree(const NodePtr& node) {
 
 void EBST::splitSubtreesByDegree(const NodePtr& root) {
 	m_degreeSubtrees.clear();
-	distributeSubtrees(root, OperatorType::Addition, false);
+	distributeSubtrees(root, OperatorType::Addition, OperatorType::Addition, false);
 }
 
-void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft) {
+void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, OperatorType subParentOp, bool isLeft) {
 	auto left = node->m_left;
 	auto right = node->m_right;
 
@@ -77,7 +77,10 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 		const auto nodeIsAddSub = isAddSubOperator(node);
 
 		if (!nodeIsAddSub) {
-			const auto resolvedIfLeftOp = isLeft ? OperatorType::Addition : parentOp;
+			auto resolvedOp = (parentOp == OperatorType::Substitution && !isLeft) ? parentOp : OperatorType::Addition;
+			if (subParentOp == OperatorType::Substitution && isLeft) {
+				resolvedOp = OperatorType::Substitution;
+			}
 
 			if (countUnknownVars(node) > 1) {
 				if (countUnknownVars(left) > 1) {
@@ -90,20 +93,20 @@ void EBST::distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool i
 
 				auto reducedNode = reduceNode(node);
 				if (!subTreesAreEqual(node, reducedNode)) {
-					distributeSubtrees(reducedNode, parentOp, isLeft);
+					distributeSubtrees(reducedNode, parentOp, subParentOp, isLeft);
 					return;
 				}
 			}
 
 			const auto subtreePower = getMaximumPowerOfSubtree(node);
-			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedIfLeftOp, isLeft);
+			insertNodeIntoDegreeSubtreesMap(node, subtreePower, resolvedOp, isLeft);
 			return;
 		}
 
 		const auto nodeOp = node->m_keyValue.first.operatorType();
 
-		distributeSubtrees(left, nodeOp, true);
-		distributeSubtrees(right, nodeOp, false);
+		distributeSubtrees(left, nodeOp, parentOp, true);
+		distributeSubtrees(right, nodeOp, parentOp, false);
 		return;
 	}
 
@@ -136,8 +139,6 @@ EBST::NodePtr EBST::buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOper
 		auto next = std::next(it, 1);
 		if (next != vec.cend()) {
 			auto opNode = allocateNode(ExpressionNode(next->op));
-
-			std::cout << ExpressionNode(next->op) << " -> " << outputInfix(subtree, false) << std::endl;
 
 			opNode->m_left = subtree;
 			opNode->m_right = buildTreeFromVectorOfNodes(std::vector(next, vec.cend()), true);

@@ -98,7 +98,7 @@ private:
 	// NodeBalancing.cpp
 	NodePtr buildBalancedTree(const NodePtr& node);
 	void splitSubtreesByDegree(const NodePtr& root);
-	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, bool isLeft);
+	void distributeSubtrees(const NodePtr& node, OperatorType parentOp, OperatorType subParentOp, bool isLeft);
 	void insertNodeIntoDegreeSubtreesMap(const NodePtr& ptr, int power, OperatorType type, bool isLeft);
 	NodePtr buildTreeFromVectorOfNodes(const std::vector<SubtreeWithOperator>& vec, bool hasParentTree = false, bool isBalancedFirst = false) const;
 	bool treeIsBalanced() const;

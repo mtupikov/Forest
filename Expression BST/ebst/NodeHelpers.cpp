@@ -10,7 +10,7 @@ ExpressionNode EBST::getExpressionNode(const NodePtr& ptr) const {
 }
 
 bool EBST::subTreesAreEqual(const NodePtr& n1, const NodePtr& n2) const {
-	if ((!n1 && !n2) || (!n1->m_left && !n2->m_left) || (!n1->m_right && !n2->m_right)) {
+	if (!n1 && !n2) {
 		return true;
 	}
 
